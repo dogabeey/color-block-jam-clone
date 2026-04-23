@@ -1,9 +1,11 @@
+using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace Game
 {
     public class LevelScene : MonoBehaviour
     {
+        [InlineEditor]
         public LevelData levelData;
         public GameEvent winTrigger, loseTrigger;
 

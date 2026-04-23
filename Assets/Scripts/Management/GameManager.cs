@@ -31,10 +31,12 @@ namespace Game
             }
         }
 
-        [FoldoutGroup("Managers")]
+        [FoldoutGroup("Managers"), InlineEditor]
         public EventManager eventManager;
-        [FoldoutGroup("Managers")]
+        [FoldoutGroup("Managers"), InlineEditor]
         public ScreenManager screenManager;
+        [FoldoutGroup("Managers"), InlineEditor]
+        public ConstantManager constantManager;
 
         public List<LevelScene> levelScenes;
         public int startingLevelIndex = 0;
@@ -88,4 +90,8 @@ namespace Game
             }
         }
     }
+}
+
+namespace Game
+{
 }
