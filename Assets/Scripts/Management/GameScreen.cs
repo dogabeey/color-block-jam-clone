@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Game.Management
+namespace Game
 {
     public abstract class GameScreen : SerializedMonoBehaviour
     {

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Game.Management
+namespace Game
 {
     public class ScreenManager : MonoBehaviour
     {
@@ -10,7 +10,7 @@ namespace Game.Management
 
         public void Init()
         {
-            screens.AddRange(FindObjectsOfType<GameScreen>(true));
+            screens.AddRange(FindObjectsByType<GameScreen>(FindObjectsSortMode.None));
 
             //Show(firstScreen);
         }

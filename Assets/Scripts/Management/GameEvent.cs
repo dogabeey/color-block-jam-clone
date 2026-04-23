@@ -1,4 +1,4 @@
-namespace Game.Management
+namespace Game
 {
 
 

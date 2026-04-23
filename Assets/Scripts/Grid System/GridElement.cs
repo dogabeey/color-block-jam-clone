@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Game.GridSystem
+namespace Game
 {
     public class GridElement : Grid3D
     {

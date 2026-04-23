@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Sirenix.OdinInspector;
 
-namespace Game.Management
+namespace Game
 {
     public class GameManager : MonoBehaviour
     {
@@ -87,11 +87,5 @@ namespace Game.Management
                 Instance.currentLoadedLevel.Lose();
             }
         }
-    }
-
-    [CreateAssetMenu(fileName = "LevelData", menuName = "Game/Level Data")]
-    public class  LevelData : ScriptableObject
-    {
-        
     }
 }

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Game.Management
+namespace Game
 {
     public class LevelScene : MonoBehaviour
     {
