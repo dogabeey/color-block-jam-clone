@@ -35,18 +35,6 @@ public class EventManager : ScriptableObject
 
     public static EventManager instance => GameManager.Instance.eventManager;
 
-    public void OnInit()
-    {
-        UpdateInspectorInfo();
-    }
-
-    public void OnUpdate()
-    {
-#if UNITY_EDITOR
-        UpdateInspectorInfo();
-#endif
-    }
-
     public void OnApplicationPause()
     {
     }
@@ -65,37 +53,6 @@ public class EventManager : ScriptableObject
             ClearAllListeners();
         }
 #endif
-    }
-
-    private void UpdateInspectorInfo()
-    {
-        activeListeners.Clear();
-        totalListenerCount = 0;
-
-        foreach (var kvp in eventDictionary)
-        {
-            if (kvp.Value != null)
-            {
-                Delegate[] invocationList = kvp.Value.GetInvocationList();
-                int count = invocationList.Length;
-                totalListenerCount += count;
-
-                List<string> targets = new List<string>();
-                foreach (Delegate del in invocationList)
-                {
-                    if (del.Target != null)
-                    {
-                        targets.Add($"{del.Target.GetType().Name}.{del.Method.Name}");
-                    }
-                    else
-                    {
-                        targets.Add($"Static.{del.Method.Name}");
-                    }
-                }
-
-                activeListeners.Add(new EventListenerInfo(kvp.Key, count, targets));
-            }
-        }
     }
 
     private void ClearAllListeners()
@@ -122,10 +79,6 @@ public class EventManager : ScriptableObject
             thisEvent += listener;
             instance.eventDictionary.Add(eventName, thisEvent);
         }
-        
-#if UNITY_EDITOR
-        instance.UpdateInspectorInfo();
-#endif
     }
 
     public static void StartListening(GameEvent eventName, Action<EventParam> listener)
@@ -145,10 +98,6 @@ public class EventManager : ScriptableObject
             //Update the Dictionary
             instance.eventDictionary[eventName] = thisEvent;
         }
-        
-#if UNITY_EDITOR
-        instance.UpdateInspectorInfo();
-#endif
     }
 
     public static void StopListening(GameEvent eventName, Action<EventParam> listener)
