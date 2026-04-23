@@ -1,4 +1,8 @@
 using UnityEngine;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
+using Sirenix.OdinInspector;
 
 namespace Game.Management
 {
@@ -21,9 +25,73 @@ namespace Game.Management
                 }
                 return instance;
             }
+            set
+            {
+                instance = value;
+            }
         }
 
-        [Header("Managers")]
+        [FoldoutGroup("Managers")]
         public EventManager eventManager;
+        [FoldoutGroup("Managers")]
+        public ScreenManager screenManager;
+
+        public List<LevelScene> levelScenes;
+        public int startingLevelIndex = 0;
+
+        private LevelScene currentLoadedLevel;
+
+        public int CurrentLevelIndex
+        {
+            get => PlayerPrefs.GetInt("CurrentLevelIndex", startingLevelIndex);
+            set => PlayerPrefs.SetInt("CurrentLevelIndex", value);
+        }
+
+        private void Start()
+        {
+            Instance = this;
+            InitManagers();
+
+
+            LoadLevel();
+        }
+
+        private void InitManagers()
+        {
+            screenManager.Init();
+        }
+
+        public void LoadLevel()
+        {
+            if (levelScenes.Count == 0)
+            {
+                Debug.LogError("No level scenes assigned in GameManager.", this);
+                return;
+            }
+            int levelIndex = CurrentLevelIndex % levelScenes.Count;
+            LevelScene levelScene = levelScenes[levelIndex];
+            currentLoadedLevel = Instantiate(levelScene);
+        }
+
+        public static void WinLevel()
+        {
+            if (Instance.currentLoadedLevel != null)
+            {
+                Instance.currentLoadedLevel.Win();
+            }
+        }
+        public static void LoseLevel()
+        {
+            if (Instance.currentLoadedLevel != null)
+            {
+                Instance.currentLoadedLevel.Lose();
+            }
+        }
+    }
+
+    [CreateAssetMenu(fileName = "LevelData", menuName = "Game/Level Data")]
+    public class  LevelData : ScriptableObject
+    {
+        
     }
 }
