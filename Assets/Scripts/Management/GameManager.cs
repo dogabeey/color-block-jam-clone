@@ -54,9 +54,20 @@ namespace Game
         {
             Instance = this;
             InitManagers();
+            FindOrLoadLevel();
+        }
 
-
-            LoadLevel();
+        private void FindOrLoadLevel()
+        {
+            LevelScene existingLevel = FindAnyObjectByType<LevelScene>();
+            if (existingLevel != null)
+            {
+                currentLoadedLevel = existingLevel;
+            }
+            else
+            {
+                LoadLevel();
+            }
         }
 
         private void InitManagers()

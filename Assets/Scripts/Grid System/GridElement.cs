@@ -14,7 +14,7 @@ namespace Game
         public Vector2Int position;
         public CellType cellType;
         public ElementData currentElement; // Optional: If the cell contains an element, this will hold its data
-        public int elementGroupIndex; // Same indexed element groups will act as one. They will be moved together and their tiles will be generated accordingly.
+        public int elementGroupIndex; // Same indexed element groups will act as one. They will be moved together and their tiles will be generated accordingly. 0 means no group.
     }
 
     public enum CellType

@@ -54,9 +54,17 @@ namespace Game
             {
                 value = new CellData { cellType = CellType.Empty };
             }
-            Rect elementRect = new Rect(rect.x + rect.width * 0.1f, rect.y + rect.height * 0.1f, rect.width * 0.8f, rect.height * 0.8f);
+
+            Rect elementRect = rect;
+
+            // Add gui text to indicate current index
+            GUIStyle indexStyle = new GUIStyle();
+            indexStyle.alignment = TextAnchor.MiddleCenter;
+            indexStyle.normal.textColor = Color.black;
+            indexStyle.fontStyle = FontStyle.Bold;
 
             // DRAWING
+            // Cell Background
             switch (value.cellType)
             {
                 case CellType.Empty:
@@ -66,12 +74,11 @@ namespace Game
                     EditorGUI.DrawRect(rect, emptyCellColor);
                     break;
             }
-
+            // Element Display
             if (value.cellType != CellType.Empty) // Only empty cells can have elements
             {
                 value.currentElement = null;
             }
-
             if(value.currentElement != null)
             {
                 EditorGUI.DrawRect(elementRect, value.currentElement.color);
@@ -79,7 +86,10 @@ namespace Game
                 {
                     GUI.DrawTexture(elementRect, value.currentElement.elementSprite.texture, ScaleMode.ScaleToFit, true, 1, value.currentElement.color, Vector4.zero, Vector4.zero);
                 }
+                // Grid Indicator
+                GUI.Label(elementRect, value.elementGroupIndex == 0 ? "" : value.elementGroupIndex.ToString(), indexStyle);
             }
+
 
             // INTERACTION
             if (rect.Contains(Event.current.mousePosition))
@@ -90,16 +100,20 @@ namespace Game
                     if (Event.current.keyCode == KeyCode.E)
                     {
                         value.cellType = CellType.Empty;
-                        MarkDirty();
-                        Event.current.Use();
                     }
-                    if (Event.current.keyCode == KeyCode.W)
+                    else if (Event.current.keyCode == KeyCode.W)
                     {
                         value.cellType = CellType.Wall;
                         value.currentElement = null;
-                        MarkDirty();
-                        Event.current.Use();
                     }
+                    // Catch alphanumeric keys for element assignment
+                    else if (Event.current.keyCode >= KeyCode.Alpha0 && Event.current.keyCode <= KeyCode.Alpha9 && value.currentElement != null)
+                    {
+                        int index = Event.current.keyCode - KeyCode.Alpha0;
+                        value.elementGroupIndex = index;
+                    }
+                    MarkDirty();
+                    Event.current.Use();
                 }
 
                 // Element Assignment
@@ -123,6 +137,7 @@ namespace Game
                                     });
                                 }
                             }
+                            genericMenu.ShowAsContext();
                             MarkDirty();
                         }
                     }

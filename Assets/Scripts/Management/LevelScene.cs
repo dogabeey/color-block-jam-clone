@@ -8,6 +8,11 @@ namespace Game
         [InlineEditor]
         public LevelData levelData;
         public GameEvent winTrigger, loseTrigger;
+        [Header("Prefabs")]
+        [AssetsOnly]
+        public GridCellController gridCellPrefab;
+        [Header("References")]
+        public Grid3D grid3D;
 
         private bool isWin, isLose, isEnded;
 

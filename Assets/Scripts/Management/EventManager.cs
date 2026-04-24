@@ -29,9 +29,6 @@ public class EventManager : ScriptableObject
     [Header("Inspector Debug Info")]
     [SerializeField, Tooltip("Shows all currently active event listeners (Runtime Only)")]
     private List<EventListenerInfo> activeListeners = new List<EventListenerInfo>();
-    
-    [SerializeField, Tooltip("Total number of active listeners")]
-    private int totalListenerCount = 0;
 
     public static EventManager instance => GameManager.Instance.eventManager;
 
@@ -59,7 +56,6 @@ public class EventManager : ScriptableObject
     {
         eventDictionary.Clear();
         activeListeners.Clear();
-        totalListenerCount = 0;
     }
 
     public static void StartListening(string eventName, Action<EventParam> listener)
