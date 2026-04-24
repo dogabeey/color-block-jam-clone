@@ -1,13 +1,15 @@
 using Sirenix.OdinInspector;
 using System.Collections.Generic;
-using Unity.VisualScripting.YamlDotNet.Core.Tokens;
-using UnityEditor;
 using UnityEngine;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Game
 {
     [CreateAssetMenu(fileName = "LevelData", menuName = "Game/Level Data")]
-    public class  LevelData : SerializedScriptableObject
+    public class LevelData : SerializedScriptableObject
     {
         public Vector2Int gridSize;
         [TableMatrix(HorizontalTitle = "X", VerticalTitle = "Y", DrawElementMethod = "DrawCellData", SquareCells = true)]
@@ -97,13 +99,17 @@ namespace Game
                 // Cell Type Changes
                 if (Event.current.type == EventType.KeyDown)
                 {
-                    if (Event.current.keyCode == KeyCode.E)
+                    if (Event.current.keyCode == KeyCode.E) // Empty
                     {
                         value.cellType = CellType.Empty;
                     }
-                    else if (Event.current.keyCode == KeyCode.W)
+                    else if (Event.current.keyCode == KeyCode.W) // Wall
                     {
                         value.cellType = CellType.Wall;
+                        value.currentElement = null;
+                    }
+                    else if (Event.current.keyCode == KeyCode.R) // Remove element
+                    {
                         value.currentElement = null;
                     }
                     // Catch alphanumeric keys for element assignment

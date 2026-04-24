@@ -42,7 +42,7 @@ namespace Game
         public List<ElementData> elementData;
         public int startingLevelIndex = 0;
 
-        private LevelScene currentLoadedLevel;
+        public LevelScene currentLoadedLevel;
 
         public int CurrentLevelIndex
         {

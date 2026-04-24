@@ -8,5 +8,7 @@ namespace Game
         LEVEL_COMPLETED = 100,
         LEVEL_FAILED = 101,
         LEVEL_STARTED = 102,
+
+        GRID_INITIALIZED = 200,
     }
 }
