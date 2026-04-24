@@ -62,6 +62,8 @@ namespace Game
                     }
                 }
             }
+
+            EventManager.TriggerEvent(GameEvent.GRID_INITIALIZED);
         }
 
         private void OnEnable()

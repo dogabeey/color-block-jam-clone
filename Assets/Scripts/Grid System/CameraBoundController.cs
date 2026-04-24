@@ -10,8 +10,16 @@ namespace Game
     }
     public class CameraBoundController : MonoBehaviour
     {
+        public enum Plane
+        {
+            XY,
+            XZ,
+            YZ,
+        }
+
         [SerializeField] private float initDelay = 0.1f;
         [SerializeField] private Vector4 boundsOffset;
+        [SerializeField] private Plane plane;
 
         public Vector2 MinBounds { get; private set; }
         public Vector2 MaxBounds { get; private set; }
@@ -119,11 +127,11 @@ namespace Game
 
             if (!hasAny)
             {
-                if (!TryGetLogicalGridBounds(out min, out max))
+                if (!TryGetLogicalGridBounds(plane, out min, out max))
                     yield break;
                 hasAny = true;
             }
-            else if (TryGetLogicalGridBounds(out Vector2 logicalMin, out Vector2 logicalMax))
+            else if (TryGetLogicalGridBounds(plane, out Vector2 logicalMin, out Vector2 logicalMax))
             {
                 min = Vector2.Min(min, logicalMin);
                 max = Vector2.Max(max, logicalMax);
@@ -138,8 +146,7 @@ namespace Game
             MaxBounds = max;
 
             Vector3 cameraPosition = mainCamera.transform.position;
-            cameraPosition.x = (MinBounds.x + MaxBounds.x) * 0.5f;
-            cameraPosition.y = (MinBounds.y + MaxBounds.y) * 0.5f;
+            ApplyPlaneCenterToPosition(ref cameraPosition, plane, (MinBounds.x + MaxBounds.x) * 0.5f, (MinBounds.y + MaxBounds.y) * 0.5f);
             mainCamera.transform.position = cameraPosition;
 
             float boundsHeight = Mathf.Max(0.0001f, MaxBounds.y - MinBounds.y);
@@ -153,7 +160,7 @@ namespace Game
             hasCalibrated = true;
         }
 
-        private static bool TryGetLogicalGridBounds(out Vector2 min, out Vector2 max)
+        private static bool TryGetLogicalGridBounds(Plane plane, out Vector2 min, out Vector2 max)
         {
             min = Vector2.zero;
             max = Vector2.zero;
@@ -166,7 +173,7 @@ namespace Game
             if (size.x <= 0 || size.y <= 0)
                 return false;
 
-            if (!TryEstimateGridTransform(grid, size, out Vector2 origin, out Vector2 stepX, out Vector2 stepY))
+            if (!TryEstimateGridTransform(grid, size, plane, out Vector2 origin, out Vector2 stepX, out Vector2 stepY))
                 return false;
 
             bool hasAny = false;
@@ -192,7 +199,26 @@ namespace Game
             return hasAny;
         }
 
-        private static bool TryEstimateGridTransform(Grid3D grid, Vector2Int size, out Vector2 origin, out Vector2 stepX, out Vector2 stepY)
+        private static void ApplyPlaneCenterToPosition(ref Vector3 position, Plane plane, float axisA, float axisB)
+        {
+            switch (plane)
+            {
+                case Plane.XY:
+                    position.x = axisA;
+                    position.y = axisB;
+                    break;
+                case Plane.XZ:
+                    position.x = axisA;
+                    position.z = axisB;
+                    break;
+                case Plane.YZ:
+                    position.y = axisA;
+                    position.z = axisB;
+                    break;
+            }
+        }
+
+        private static bool TryEstimateGridTransform(Grid3D grid, Vector2Int size, Plane plane, out Vector2 origin, out Vector2 stepX, out Vector2 stepY)
         {
             origin = Vector2.zero;
             stepX = Vector2.zero;
@@ -206,7 +232,7 @@ namespace Game
                 {
                     GridCellController tile = grid.GetCellControllerAt(new Vector2Int(x, y));
                     if (tile != null)
-                        samples.Add((new Vector2Int(x, y), tile.transform.position));
+                        samples.Add((new Vector2Int(x, y), ProjectToPlane(tile.transform.position, plane)));
                 }
             }
 
@@ -256,6 +282,21 @@ namespace Game
 
             origin = originSum / samples.Count;
             return true;
+        }
+
+        private static Vector2 ProjectToPlane(Vector3 position, Plane plane)
+        {
+            switch (plane)
+            {
+                case Plane.XY:
+                    return new Vector2(position.x, position.y);
+                case Plane.XZ:
+                    return new Vector2(position.x, position.z);
+                case Plane.YZ:
+                    return new Vector2(position.y, position.z);
+                default:
+                    return new Vector2(position.x, position.y);
+            }
         }
     }
 }
