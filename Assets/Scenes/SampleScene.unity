@@ -633,9 +633,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game.Management::Game.Management.GameManager
   eventManager: {fileID: 11400000, guid: d413ba04cecf522498d4eaf78137550d, type: 2}
-  screenManager: {fileID: 0}
-  constantManager: {fileID: 0}
+  screenManager: {fileID: 517478365}
+  constantManager: {fileID: 11400000, guid: bb3a1790cbd9ce140aa2c7b38faf572a, type: 2}
   levelScenes: []
+  elementData:
+  - {fileID: 11400000, guid: bbc637176e0bdc344bb79c8188f868d4, type: 2}
+  - {fileID: 11400000, guid: 3bb371fc0ff52454a9a127c21ea45d7a, type: 2}
+  - {fileID: 11400000, guid: 029873b22f28f1a44b9d4d33814c737c, type: 2}
+  - {fileID: 11400000, guid: f74c8473b73932840b63a9ef87a44a06, type: 2}
+  - {fileID: 11400000, guid: 1a2f7840beee4264a87f8aacc3531728, type: 2}
+  - {fileID: 11400000, guid: 6524f42da4fb92542bb8c5d0a27c1582, type: 2}
+  - {fileID: 11400000, guid: 053a68b3b4ecdc4419f6b8cbe7d1d4a0, type: 2}
+  - {fileID: 11400000, guid: cc2478b3cfee13b44b72fb439b638d2f, type: 2}
   startingLevelIndex: 0
 --- !u!1 &1402732412
 GameObject:

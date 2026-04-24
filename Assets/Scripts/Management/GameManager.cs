@@ -39,6 +39,7 @@ namespace Game
         public ConstantManager constantManager;
 
         public List<LevelScene> levelScenes;
+        public List<ElementData> elementData;
         public int startingLevelIndex = 0;
 
         private LevelScene currentLoadedLevel;
