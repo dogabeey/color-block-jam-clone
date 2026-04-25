@@ -251,7 +251,7 @@ namespace Game
                 desiredContinuousDelta.x >= 0f ? Mathf.FloorToInt(desiredContinuousDelta.x) : Mathf.CeilToInt(desiredContinuousDelta.x),
                 desiredContinuousDelta.y >= 0f ? Mathf.FloorToInt(desiredContinuousDelta.y) : Mathf.CeilToInt(desiredContinuousDelta.y));
 
-            TryMoveTowardsDesiredDelta(desiredDelta);
+            TryMoveTowardsDesiredDelta(desiredDelta, desiredContinuousDelta);
             UpdateVisualOffset(desiredContinuousDelta);
         }
 
@@ -308,15 +308,39 @@ namespace Game
             }
         }
 
-        private static void TryMoveTowardsDesiredDelta(Vector2Int desiredDelta)
+        private static void TryMoveTowardsDesiredDelta(Vector2Int desiredDelta, Vector2 prioritySource)
         {
             if (activeDrag == null)
             {
                 return;
             }
 
-            MoveAxisTowardsDesired(desiredDelta.x, true);
-            MoveAxisTowardsDesired(desiredDelta.y, false);
+            float remainingX = Mathf.Abs(prioritySource.x - activeDrag.appliedDelta.x);
+            float remainingY = Mathf.Abs(prioritySource.y - activeDrag.appliedDelta.y);
+
+            const float axisTieThreshold = 0.05f;
+            bool prioritizeX;
+            if (Mathf.Abs(remainingX - remainingY) <= axisTieThreshold)
+            {
+                prioritizeX = activeDrag.prioritizeXAxis;
+            }
+            else
+            {
+                prioritizeX = remainingX > remainingY;
+            }
+
+            activeDrag.prioritizeXAxis = prioritizeX;
+
+            if (prioritizeX)
+            {
+                MoveAxisTowardsDesired(desiredDelta.x, true);
+                MoveAxisTowardsDesired(desiredDelta.y, false);
+            }
+            else
+            {
+                MoveAxisTowardsDesired(desiredDelta.y, false);
+                MoveAxisTowardsDesired(desiredDelta.x, true);
+            }
         }
 
         private static void MoveAxisTowardsDesired(int desiredAxisValue, bool isXAxis)
@@ -454,7 +478,7 @@ namespace Game
                 Mathf.RoundToInt(activeDrag.desiredContinuousDelta.x),
                 Mathf.RoundToInt(activeDrag.desiredContinuousDelta.y));
 
-            TryMoveTowardsDesiredDelta(roundedTarget);
+            TryMoveTowardsDesiredDelta(roundedTarget, roundedTarget);
 
             Vector2 targetVisualOffset = new Vector2(
                 roundedTarget.x - activeDrag.appliedDelta.x,
@@ -639,6 +663,7 @@ namespace Game
             public Vector2 desiredContinuousDelta;
             public Vector2 visualOffset;
             public bool isSnapping;
+            public bool prioritizeXAxis = true;
         }
     }
 
