@@ -8,6 +8,9 @@ namespace Game
         [Header("Level Editor Configuration")]
         public Color emptyCell = new Color(1f, 1f, 1f, 0.5f);
         public Color wallCell = new Color(0f, 0f, 0f, 0.5f);
+
+        [Header("Block Movement Configuration")]
+        public float blockExitMoveSpeed = 6f;
         
     }
 }

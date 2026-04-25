@@ -58,9 +58,16 @@ namespace Game
             }
 
             bool isEdgeCell = Grid3D.IsEdgeCoordinate(value.position, gridSize);
+            bool isCornerCell = (value.position.x == 0 || value.position.x == gridSize.x - 1) && (value.position.y == 0 || value.position.y == gridSize.y - 1);
+            bool isExitCell = isEdgeCell && !isCornerCell;
             if (isEdgeCell)
             {
                 value.cellType = CellType.Wall;
+            }
+
+            if (isCornerCell)
+            {
+                value.currentElement = null;
             }
 
             Rect elementRect = rect;
@@ -73,9 +80,13 @@ namespace Game
 
             // DRAWING
             // Cell Background
-            if (isEdgeCell)
+            if (isExitCell)
             {
                 EditorGUI.DrawRect(rect, value.currentElement != null ? value.currentElement.color : exitCellDefaultColor);
+            }
+            else if (isCornerCell)
+            {
+                EditorGUI.DrawRect(rect, exitCellDefaultColor);
             }
             else
             {
@@ -126,6 +137,28 @@ namespace Game
                     {
                         value.currentElement = null;
                     }
+                    else if (Event.current.keyCode == KeyCode.UpArrow || Event.current.keyCode == KeyCode.DownArrow) // Directional Restriction Vertical Only
+                    {
+                        if (value.movementRestriction == DirectionRestriction.VerticalOnly)
+                        {
+                            value.movementRestriction = DirectionRestriction.None;
+                        }
+                        else
+                        {
+                            value.movementRestriction = DirectionRestriction.VerticalOnly;
+                        }
+                    }
+                    else if (Event.current.keyCode == KeyCode.LeftArrow || Event.current.keyCode == KeyCode.RightArrow) // Directional Restriction Horizontal Only
+                    {
+                        if (value.movementRestriction == DirectionRestriction.HorizontalOnly)
+                        {
+                            value.movementRestriction = DirectionRestriction.None;
+                        }
+                        else
+                        {
+                            value.movementRestriction = DirectionRestriction.HorizontalOnly;
+                        }
+                    }
                     // Catch alphanumeric keys for element assignment
                     else if (Event.current.keyCode >= KeyCode.Alpha0 && Event.current.keyCode <= KeyCode.Alpha9 && value.currentElement != null)
                     {
@@ -140,7 +173,7 @@ namespace Game
                 List<ElementData> elementPool = GameManager.Instance.elementData;
                 if (Event.current.type == EventType.MouseDown && Event.current.button == 1)
                 {
-                    if (isEdgeCell || value.cellType == CellType.Empty)
+                    if (isExitCell || value.cellType == CellType.Empty)
                     {
                         if (elementPool.Count > 0)
                         {

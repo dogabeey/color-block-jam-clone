@@ -13,6 +13,8 @@ namespace Game
         public GridCellController gridCellPrefab;
         [AssetsOnly]
         public GridElement gridElementPrefab;
+        [AssetsOnly]
+        public ExitGateController exitGatePrefab;
         [Header("References")]
         public Grid3D grid3D;
 
@@ -49,7 +51,8 @@ namespace Game
                     CellData cellData = layout[x, y];
                     Vector2Int position = new Vector2Int(x, y);
                     bool isEdgeCell = Grid3D.IsEdgeCoordinate(position, width, height);
-                    ElementData exitElement = isEdgeCell && cellData != null ? cellData.currentElement : null;
+                    bool isCornerCell = (x == 0 || x == width - 1) && (y == 0 || y == height - 1);
+                    ElementData exitElement = isEdgeCell && !isCornerCell && cellData != null ? cellData.currentElement : null;
                     CellType runtimeCellType = isEdgeCell
                         ? CellType.Wall
                         : (cellData != null ? cellData.cellType : CellType.Empty);
@@ -57,6 +60,23 @@ namespace Game
                     GridCellController cell = Instantiate(gridCellPrefab, grid3D.transform);
                     cell.transform.localPosition = new Vector3(x, 0f, y);
                     cell.Configure(position, runtimeCellType, isEdgeCell, exitElement);
+                    cell.exitGate = null;
+
+                    if (isEdgeCell && !isCornerCell && exitGatePrefab != null)
+                    {
+                        ExitGateController exitGate = Instantiate(exitGatePrefab, cell.transform);
+                        exitGate.transform.localPosition = Vector3.zero;
+
+                        Vector3 exitDirection = GetExitDirection(position, width, height);
+                        if (exitDirection != Vector3.zero)
+                        {
+                            exitGate.transform.rotation = Quaternion.LookRotation(grid3D.transform.TransformDirection(exitDirection), grid3D.transform.up);
+                        }
+
+                        exitGate.Init(exitElement);
+                        cell.exitGate = exitGate;
+                    }
+
                     grid3D.gridCellControllers[x, y] = cell;
 
                     if (!isEdgeCell && cellData != null && cellData.cellType == CellType.Empty && cellData.currentElement != null && gridElementPrefab != null)
@@ -73,6 +93,31 @@ namespace Game
             }
 
             EventManager.TriggerEvent(GameEvent.GRID_INITIALIZED);
+        }
+
+        private static Vector3 GetExitDirection(Vector2Int position, int width, int height)
+        {
+            if (position.x == 0)
+            {
+                return Vector3.left;
+            }
+
+            if (position.x == width - 1)
+            {
+                return Vector3.right;
+            }
+
+            if (position.y == 0)
+            {
+                return Vector3.back;
+            }
+
+            if (position.y == height - 1)
+            {
+                return Vector3.forward;
+            }
+
+            return Vector3.zero;
         }
 
         private void OnEnable()

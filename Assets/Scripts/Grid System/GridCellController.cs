@@ -15,6 +15,7 @@ namespace Game
         public CellType cellType;
         public bool isExitCell;
         public ElementData exitElementData;
+        public ExitGateController exitGate;
         public GridElement currentElement;
 
         private void Awake()
@@ -41,11 +42,16 @@ namespace Game
                 return;
             }
 
-            Color targetColor = cellType == CellType.Wall ? wallColor : emptyColor;
+            // Edge cells are logical walls/exits only; keep the tile mesh hidden.
             if (isExitCell)
             {
-                targetColor = exitElementData != null ? exitElementData.color : wallColor;
+                cellRenderer.enabled = false;
+                return;
             }
+
+            cellRenderer.enabled = true;
+
+            Color targetColor = cellType == CellType.Wall ? wallColor : emptyColor;
 
             cellRenderer.material.color = targetColor;
         }

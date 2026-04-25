@@ -403,7 +403,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
-    m_Type: 2
+    m_Type: 1
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -483,7 +483,7 @@ MonoBehaviour:
   m_CustomShadowLayers: 0
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
-  m_SoftShadowQuality: 1
+  m_SoftShadowQuality: 3
   m_RenderingLayersMask:
     serializedVersion: 0
     m_Bits: 1
@@ -732,6 +732,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Example Level
       objectReference: {fileID: 0}
+    - target: {fileID: 7827360465860678067, guid: 132a300b07615ee4c841ba5c1a941cb9, type: 3}
+      propertyPath: exitGatePrefab
+      value: 
+      objectReference: {fileID: 6530216437892190490, guid: 627b17cb33438f1439e5d64936bb9e7a, type: 3}
     - target: {fileID: 7827360465860678067, guid: 132a300b07615ee4c841ba5c1a941cb9, type: 3}
       propertyPath: gridCellPrefab
       value: 

@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
+using DG.Tweening;
+using Sirenix.Utilities;
 
 namespace Game
 {
@@ -400,16 +401,56 @@ namespace Game
 
         private static bool TryExitIfAlignedWithAdjacentExit()
         {
-            if (activeDrag == null || activeDrag.leader == null || activeDrag.leader.elementData == null)
+            if (!TryCollectCurrentPositions(out List<Vector2Int> currentPositions))
             {
                 return false;
             }
 
-            GridCellController[,] cells = activeDrag.rootGrid.gridCellControllers;
-            int width = cells.GetLength(0);
-            int height = cells.GetLength(1);
+            if (!TryGetExitMatchForCurrentPositions(currentPositions, out Vector2Int exitDirection, out List<GridCellController> exitCells))
+            {
+                return false;
+            }
 
-            List<Vector2Int> currentPositions = new List<Vector2Int>(activeDrag.movingElements.Count);
+            BeginExit(exitDirection, exitCells, currentPositions);
+            return true;
+        }
+
+        private static bool TryApplyExitStep(Vector2Int step)
+        {
+            if (activeDrag == null || step == Vector2Int.zero)
+            {
+                return false;
+            }
+
+            if (!TryCollectCurrentPositions(out List<Vector2Int> currentPositions))
+            {
+                return false;
+            }
+
+            if (!TryGetExitMatchForCurrentPositions(currentPositions, out Vector2Int exitDirection, out List<GridCellController> exitCells))
+            {
+                return false;
+            }
+
+            if (exitDirection != step)
+            {
+                return false;
+            }
+
+            BeginExit(exitDirection, exitCells, currentPositions);
+            return true;
+        }
+
+        private static bool TryCollectCurrentPositions(out List<Vector2Int> currentPositions)
+        {
+            currentPositions = null;
+
+            if (activeDrag == null || activeDrag.movingElements == null || activeDrag.movingElements.Count == 0)
+            {
+                return false;
+            }
+
+            currentPositions = new List<Vector2Int>(activeDrag.movingElements.Count);
             for (int i = 0; i < activeDrag.movingElements.Count; i++)
             {
                 GridElement element = activeDrag.movingElements[i];
@@ -421,58 +462,15 @@ namespace Game
                 currentPositions.Add(element.currentCell.gridPosition);
             }
 
-            ExitSide[] candidateSides = { ExitSide.Left, ExitSide.Right, ExitSide.Bottom, ExitSide.Top };
-            for (int sideIndex = 0; sideIndex < candidateSides.Length; sideIndex++)
-            {
-                ExitSide side = candidateSides[sideIndex];
-                if (!AreCurrentPositionsAlignedWithExit(currentPositions, side, width, height))
-                {
-                    continue;
-                }
-
-                if (!ArePositionsContiguousAlongExit(currentPositions, side))
-                {
-                    continue;
-                }
-
-                Vector2Int exitDirection = GetExitDirection(side);
-                List<Vector2Int> exitPositions = new List<Vector2Int>(currentPositions.Count);
-                bool allMatch = true;
-
-                for (int i = 0; i < currentPositions.Count; i++)
-                {
-                    Vector2Int exitPosition = currentPositions[i] + exitDirection;
-                    if (exitPosition.x < 0 || exitPosition.y < 0 || exitPosition.x >= width || exitPosition.y >= height)
-                    {
-                        allMatch = false;
-                        break;
-                    }
-
-                    GridCellController exitCell = cells[exitPosition.x, exitPosition.y];
-                    if (exitCell == null || !exitCell.isExitCell || exitCell.exitElementData != activeDrag.leader.elementData)
-                    {
-                        allMatch = false;
-                        break;
-                    }
-
-                    exitPositions.Add(exitPosition);
-                }
-
-                if (!allMatch || !ArePositionsContiguousAlongExit(exitPositions, side))
-                {
-                    continue;
-                }
-
-                BeginExit(exitDirection);
-                return true;
-            }
-
-            return false;
+            return true;
         }
 
-        private static bool TryApplyExitStep(Vector2Int step)
+        private static bool TryGetExitMatchForCurrentPositions(List<Vector2Int> currentPositions, out Vector2Int exitDirection, out List<GridCellController> exitCells)
         {
-            if (activeDrag == null || step == Vector2Int.zero)
+            exitDirection = Vector2Int.zero;
+            exitCells = null;
+
+            if (activeDrag == null || activeDrag.rootGrid == null || activeDrag.leader == null || activeDrag.leader.elementData == null)
             {
                 return false;
             }
@@ -481,78 +479,169 @@ namespace Game
             int width = cells.GetLength(0);
             int height = cells.GetLength(1);
 
-            if (activeDrag.leader == null || activeDrag.leader.elementData == null)
+            ExitSide[] candidateSides = { ExitSide.Left, ExitSide.Right, ExitSide.Bottom, ExitSide.Top };
+            for (int sideIndex = 0; sideIndex < candidateSides.Length; sideIndex++)
             {
-                return false;
+                ExitSide side = candidateSides[sideIndex];
+                if (!HasAnyAdjacentElementToExit(currentPositions, side, width, height))
+                {
+                    continue;
+                }
+
+                List<int> projectedValues = GetProjectedValues(currentPositions, side);
+                if (projectedValues.Count == 0 || !AreProjectedValuesContiguous(projectedValues))
+                {
+                    continue;
+                }
+
+                int projectionStart = projectedValues[0];
+                int projectionEnd = projectedValues[projectedValues.Count - 1];
+                if (!HasMatchingContiguousExitSegment(cells, side, projectionStart, projectionEnd, width, height, activeDrag.leader.elementData))
+                {
+                    continue;
+                }
+
+                exitCells = new List<GridCellController>(projectedValues.Count);
+                for (int i = 0; i < projectedValues.Count; i++)
+                {
+                    GridCellController edgeCell = GetEdgeCell(cells, side, projectedValues[i], width, height);
+                    if (edgeCell != null)
+                    {
+                        exitCells.Add(edgeCell);
+                    }
+                }
+
+                exitDirection = GetExitDirection(side);
+                return true;
             }
 
-            List<Vector2Int> currentPositions = new List<Vector2Int>(activeDrag.movingElements.Count);
-            List<Vector2Int> targetExitPositions = new List<Vector2Int>(activeDrag.movingElements.Count);
+            return false;
+        }
 
-            for (int i = 0; i < activeDrag.movingElements.Count; i++)
+        private static bool HasAnyAdjacentElementToExit(List<Vector2Int> positions, ExitSide side, int width, int height)
+        {
+            for (int i = 0; i < positions.Count; i++)
             {
-                GridElement element = activeDrag.movingElements[i];
-                if (element == null || !activeDrag.startCoordinates.TryGetValue(element, out Vector2Int startPosition))
+                Vector2Int position = positions[i];
+                switch (side)
+                {
+                    case ExitSide.Left:
+                        if (position.x == 1)
+                        {
+                            return true;
+                        }
+                        break;
+                    case ExitSide.Right:
+                        if (position.x == width - 2)
+                        {
+                            return true;
+                        }
+                        break;
+                    case ExitSide.Bottom:
+                        if (position.y == 1)
+                        {
+                            return true;
+                        }
+                        break;
+                    case ExitSide.Top:
+                        if (position.y == height - 2)
+                        {
+                            return true;
+                        }
+                        break;
+                }
+            }
+
+            return false;
+        }
+
+        private static List<int> GetProjectedValues(List<Vector2Int> positions, ExitSide side)
+        {
+            HashSet<int> uniqueValues = new HashSet<int>();
+            for (int i = 0; i < positions.Count; i++)
+            {
+                uniqueValues.Add(side == ExitSide.Left || side == ExitSide.Right ? positions[i].y : positions[i].x);
+            }
+
+            List<int> values = new List<int>(uniqueValues);
+            values.Sort();
+            return values;
+        }
+
+        private static bool AreProjectedValuesContiguous(List<int> values)
+        {
+            if (values.Count <= 1)
+            {
+                return values.Count == 1;
+            }
+
+            for (int i = 1; i < values.Count; i++)
+            {
+                if (values[i] - values[i - 1] != 1)
                 {
                     return false;
                 }
-
-                Vector2Int currentPosition = startPosition + activeDrag.appliedDelta;
-                Vector2Int targetPosition = currentPosition + step;
-
-                if (targetPosition.x < 0 || targetPosition.y < 0 || targetPosition.x >= width || targetPosition.y >= height)
-                {
-                    return false;
-                }
-
-                GridCellController targetCell = cells[targetPosition.x, targetPosition.y];
-                if (targetCell == null || !targetCell.isExitCell)
-                {
-                    return false;
-                }
-
-                if (targetCell.exitElementData != activeDrag.leader.elementData)
-                {
-                    return false;
-                }
-
-                currentPositions.Add(currentPosition);
-                targetExitPositions.Add(targetPosition);
             }
 
-            if (!TryGetExitSide(targetExitPositions[0], width, height, out ExitSide exitSide))
-            {
-                return false;
-            }
-
-            for (int i = 1; i < targetExitPositions.Count; i++)
-            {
-                if (!TryGetExitSide(targetExitPositions[i], width, height, out ExitSide currentSide) || currentSide != exitSide)
-                {
-                    return false;
-                }
-            }
-
-            if (!ArePositionsContiguousAlongExit(targetExitPositions, exitSide))
-            {
-                return false;
-            }
-
-            if (!AreCurrentPositionsAlignedWithExit(currentPositions, exitSide, width, height))
-            {
-                return false;
-            }
-
-            if (!ArePositionsContiguousAlongExit(currentPositions, exitSide))
-            {
-                return false;
-            }
-
-            BeginExit(step);
             return true;
         }
 
-        private static void BeginExit(Vector2Int direction)
+        private static bool HasMatchingContiguousExitSegment(GridCellController[,] cells, ExitSide side, int projectionStart, int projectionEnd, int width, int height, ElementData elementData)
+        {
+            List<int> matchingIndices = new List<int>();
+            int edgeLength = side == ExitSide.Left || side == ExitSide.Right ? height : width;
+
+            for (int i = 0; i < edgeLength; i++)
+            {
+                GridCellController edgeCell = GetEdgeCell(cells, side, i, width, height);
+                if (edgeCell != null && edgeCell.isExitCell && edgeCell.exitElementData == elementData)
+                {
+                    matchingIndices.Add(i);
+                }
+            }
+
+            if (matchingIndices.Count == 0)
+            {
+                return false;
+            }
+
+            int segmentStart = matchingIndices[0];
+            int segmentEnd = matchingIndices[0];
+
+            for (int i = 1; i < matchingIndices.Count; i++)
+            {
+                int index = matchingIndices[i];
+                if (index == segmentEnd + 1)
+                {
+                    segmentEnd = index;
+                    continue;
+                }
+
+                if (projectionStart >= segmentStart && projectionEnd <= segmentEnd)
+                {
+                    return true;
+                }
+
+                segmentStart = index;
+                segmentEnd = index;
+            }
+
+            return projectionStart >= segmentStart && projectionEnd <= segmentEnd;
+        }
+
+        private static GridCellController GetEdgeCell(GridCellController[,] cells, ExitSide side, int edgeIndex, int width, int height)
+        {
+            return side switch
+            {
+                ExitSide.Left => cells[0, edgeIndex],
+                ExitSide.Right => cells[width - 1, edgeIndex],
+                ExitSide.Bottom => cells[edgeIndex, 0],
+                ExitSide.Top => cells[edgeIndex, height - 1],
+                _ => null,
+            };
+        }
+
+        private static void BeginExit(Vector2Int direction, List<GridCellController> exitCells = null, List<Vector2Int> currentPositions = null)
         {
             if (activeDrag == null)
             {
@@ -560,6 +649,15 @@ namespace Game
             }
 
             DragContext exitingDrag = activeDrag;
+            List<Vector2Int> positionsForDistance = currentPositions;
+            if (positionsForDistance == null)
+            {
+                TryCollectCurrentPositions(out positionsForDistance);
+            }
+
+            int travelCellCount = GetBlockLengthAlongDirection(positionsForDistance, direction);
+            float exitMoveSpeed = GetExitMoveSpeed();
+            float travelDuration = Mathf.Max(0.01f, travelCellCount / Mathf.Max(0.01f, exitMoveSpeed));
 
             for (int i = 0; i < exitingDrag.movingElements.Count; i++)
             {
@@ -581,8 +679,105 @@ namespace Game
 
             if (exitingDrag.rootGrid != null)
             {
-                float duration = exitingDrag.leader != null ? exitingDrag.leader.snapDuration : 0.12f;
-                exitingDrag.rootGrid.StartCoroutine(ExitAndDestroy(exitingDrag.movingElements, direction, duration));
+                TriggerExitGates(exitCells, travelDuration);
+                PlayExitAndDestroy(exitingDrag.movingElements, direction, travelCellCount, travelDuration);
+            }
+        }
+
+        private static float GetExitMoveSpeed()
+        {
+            ConstantManager constantManager = GameManager.Instance != null ? GameManager.Instance.constantManager : null;
+            if (constantManager != null && constantManager.blockExitMoveSpeed > 0f)
+            {
+                return constantManager.blockExitMoveSpeed;
+            }
+
+            return 6f;
+        }
+
+        private static int GetBlockLengthAlongDirection(List<Vector2Int> positions, Vector2Int direction)
+        {
+            if (positions == null || positions.Count == 0)
+            {
+                return 1;
+            }
+
+            bool horizontalExit = direction.x != 0;
+            int minAxis = int.MaxValue;
+            int maxAxis = int.MinValue;
+
+            for (int i = 0; i < positions.Count; i++)
+            {
+                int axis = horizontalExit ? positions[i].x : positions[i].y;
+                if (axis < minAxis)
+                {
+                    minAxis = axis;
+                }
+
+                if (axis > maxAxis)
+                {
+                    maxAxis = axis;
+                }
+            }
+
+            return Mathf.Max(1, (maxAxis - minAxis) + 1);
+        }
+
+        private static void PlayExitAndDestroy(List<GridElement> elements, Vector2Int direction, int travelCellCount, float duration)
+        {
+            if (elements == null || elements.Count == 0)
+            {
+                return;
+            }
+
+            float distance = Mathf.Max(1f, travelCellCount);
+            Vector3 localMove = new Vector3(direction.x, 0f, direction.y) * distance;
+
+            Sequence sequence = DOTween.Sequence();
+            for (int i = 0; i < elements.Count; i++)
+            {
+                GridElement element = elements[i];
+                if (element == null)
+                {
+                    continue;
+                }
+
+                sequence.Join(element.transform.DOLocalMove(element.transform.localPosition + localMove, duration).SetEase(Ease.InQuad));
+            }
+
+            sequence.OnComplete(() =>
+            {
+                for (int i = 0; i < elements.Count; i++)
+                {
+                    GridElement element = elements[i];
+                    if (element != null)
+                    {
+                        Object.Destroy(element.gameObject);
+                    }
+                }
+            });
+        }
+
+        private static void TriggerExitGates(List<GridCellController> exitCells, float duration)
+        {
+            if (exitCells == null || exitCells.Count == 0)
+            {
+                return;
+            }
+
+            HashSet<ExitGateController> uniqueGates = new HashSet<ExitGateController>();
+            for (int i = 0; i < exitCells.Count; i++)
+            {
+                GridCellController cell = exitCells[i];
+                if (cell == null || cell.exitGate == null)
+                {
+                    continue;
+                }
+
+                if (uniqueGates.Add(cell.exitGate))
+                {
+                    cell.exitGate.PlayTransit(duration);
+                }
             }
         }
 
@@ -690,50 +885,6 @@ namespace Game
             }
 
             return true;
-        }
-
-        private static IEnumerator ExitAndDestroy(List<GridElement> elements, Vector2Int direction, float duration)
-        {
-            float animationDuration = Mathf.Max(0.01f, duration);
-            Vector3 localMove = new Vector3(direction.x, 0f, direction.y);
-
-            List<Vector3> startPositions = new List<Vector3>(elements.Count);
-            for (int i = 0; i < elements.Count; i++)
-            {
-                GridElement element = elements[i];
-                startPositions.Add(element != null ? element.transform.localPosition : Vector3.zero);
-            }
-
-            float elapsed = 0f;
-            while (elapsed < animationDuration)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / animationDuration);
-
-                for (int i = 0; i < elements.Count; i++)
-                {
-                    GridElement element = elements[i];
-                    if (element == null)
-                    {
-                        continue;
-                    }
-
-                    Vector3 start = startPositions[i];
-                    Vector3 target = new Vector3(start.x + localMove.x, 0f, start.z + localMove.z);
-                    element.transform.localPosition = Vector3.Lerp(start, target, t);
-                }
-
-                yield return null;
-            }
-
-            for (int i = 0; i < elements.Count; i++)
-            {
-                GridElement element = elements[i];
-                if (element != null)
-                {
-                    Object.Destroy(element.gameObject);
-                }
-            }
         }
 
         private static bool CanApplyDelta(Vector2Int delta)
@@ -870,108 +1021,95 @@ namespace Game
                 targetVisualOffset.y = 0f;
             }
 
-            GridElement coroutineOwner = inputDriver != null ? inputDriver : activeDrag.leader;
-            if (coroutineOwner == null)
-            {
-                for (int i = 0; i < activeDrag.movingElements.Count; i++)
-                {
-                    GridElement element = activeDrag.movingElements[i];
-                    if (element != null)
-                    {
-                        coroutineOwner = element;
-                        break;
-                    }
-                }
-            }
-
-            if (coroutineOwner == null)
+            if (activeDrag.movingElements == null || activeDrag.movingElements.Count == 0)
             {
                 activeDrag = null;
                 return;
             }
 
             activeDrag.isSnapping = true;
-            coroutineOwner.StartCoroutine(SnapAndRelease(targetVisualOffset));
+            StartSnapRelease(targetVisualOffset);
         }
 
-        private static IEnumerator SnapAndRelease(Vector2 targetVisualOffset)
+        private static void StartSnapRelease(Vector2 targetVisualOffset)
         {
             if (activeDrag == null)
             {
-                yield break;
+                return;
             }
 
             DragContext drag = activeDrag;
 
-            Vector2 startOffset = drag.visualOffset;
             float duration = 0.1f;
             if (drag.leader != null)
             {
                 duration = Mathf.Max(0.01f, drag.leader.snapDuration);
             }
 
-            float elapsed = 0f;
-            while (elapsed < duration)
+            if (drag.snapSequence != null && drag.snapSequence.IsActive())
+            {
+                drag.snapSequence.Kill(false);
+            }
+
+            Sequence snapSequence = DOTween.Sequence();
+            for (int i = 0; i < drag.movingElements.Count; i++)
+            {
+                GridElement element = drag.movingElements[i];
+                if (element == null)
+                {
+                    continue;
+                }
+
+                Vector3 snapTarget = new Vector3(targetVisualOffset.x, 0f, targetVisualOffset.y);
+                snapSequence.Join(element.transform.DOLocalMove(snapTarget, duration).SetEase(Ease.OutQuad));
+            }
+
+            drag.snapSequence = snapSequence;
+            snapSequence.OnComplete(() =>
             {
                 if (activeDrag != drag)
                 {
-                    yield break;
+                    return;
                 }
 
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / duration);
-                Vector2 offset = Vector2.Lerp(startOffset, targetVisualOffset, t);
-                drag.visualOffset = offset;
+                drag.visualOffset = targetVisualOffset;
+
+                Vector2Int extraSnap = new Vector2Int(
+                    Mathf.RoundToInt(targetVisualOffset.x),
+                    Mathf.RoundToInt(targetVisualOffset.y));
+
+                if (extraSnap != Vector2Int.zero)
+                {
+                    Vector2Int finalDelta = drag.appliedDelta + extraSnap;
+                    if (CanApplyDelta(finalDelta))
+                    {
+                        ApplyDelta(finalDelta);
+                        if (activeDrag == null)
+                        {
+                            return;
+                        }
+                    }
+                }
+
+                if (TryExitIfAlignedWithAdjacentExit())
+                {
+                    return;
+                }
 
                 for (int i = 0; i < drag.movingElements.Count; i++)
                 {
                     GridElement element = drag.movingElements[i];
-                    if (element == null)
+                    if (element != null)
                     {
-                        continue;
-                    }
-
-                    element.transform.localPosition = new Vector3(offset.x, element.dragLiftHeight * (1f - t), offset.y);
-                }
-
-                yield return null;
-            }
-
-            Vector2Int extraSnap = new Vector2Int(
-                Mathf.RoundToInt(targetVisualOffset.x),
-                Mathf.RoundToInt(targetVisualOffset.y));
-
-            if (extraSnap != Vector2Int.zero)
-            {
-                Vector2Int finalDelta = drag.appliedDelta + extraSnap;
-                if (CanApplyDelta(finalDelta))
-                {
-                    ApplyDelta(finalDelta);
-                    if (activeDrag == null)
-                    {
-                        yield break;
+                        element.transform.localPosition = Vector3.zero;
                     }
                 }
-            }
 
-            if (TryExitIfAlignedWithAdjacentExit())
-            {
-                yield break;
-            }
-
-            for (int i = 0; i < drag.movingElements.Count; i++)
-            {
-                GridElement element = drag.movingElements[i];
-                if (element != null)
+                if (activeDrag == drag)
                 {
-                    element.transform.localPosition = Vector3.zero;
+                    activeDrag = null;
                 }
-            }
-
-            if (activeDrag == drag)
-            {
-                activeDrag = null;
-            }
+            });
         }
 
         private static Grid3D GetRootGrid()
@@ -1038,6 +1176,7 @@ namespace Game
             public Vector2 visualOffset;
             public bool isSnapping;
             public bool prioritizeXAxis = true;
+            public Sequence snapSequence;
         }
 
         private enum ExitSide
@@ -1048,6 +1187,7 @@ namespace Game
             Bottom,
             Top,
         }
+        
     }
 
     [System.Serializable]
@@ -1056,7 +1196,9 @@ namespace Game
         public Vector2Int position;
         public CellType cellType;
         public ElementData currentElement; // Optional: If the cell contains an element, this will hold its data
+        public DirectionRestriction movementRestriction; // Optional: If the cell has movement restrictions for elements on it 
         public int elementGroupIndex; // Same indexed element groups will act as one. They will be moved together and their tiles will be generated accordingly. 0 means no group.
+
     }
 
     public enum CellType
@@ -1064,4 +1206,10 @@ namespace Game
         Empty,
         Wall,
     }
+        public enum DirectionRestriction
+        {
+            None,
+            HorizontalOnly,
+            VerticalOnly,
+        }
 }
