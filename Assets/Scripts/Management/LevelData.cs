@@ -48,13 +48,19 @@ namespace Game
         protected CellData DrawCellData(Rect rect, CellData value)
         {
             // INITIALIZATION
-            ConstantManager constantManager = GameManager.Instance.constantManager;
             Color normalCellColor = new Color(0.8f, 0.8f, 0.8f);
-            Color emptyCellColor = new Color(0.2f, 0.2f, 0.2f);
+            Color wallCellColor = new Color(0.2f, 0.2f, 0.2f);
+            Color exitCellDefaultColor = new Color(0.45f, 0.45f, 0.45f);
 
             if (value == null)
             {
                 value = new CellData { cellType = CellType.Empty };
+            }
+
+            bool isEdgeCell = Grid3D.IsEdgeCoordinate(value.position, gridSize);
+            if (isEdgeCell)
+            {
+                value.cellType = CellType.Wall;
             }
 
             Rect elementRect = rect;
@@ -67,24 +73,32 @@ namespace Game
 
             // DRAWING
             // Cell Background
-            switch (value.cellType)
+            if (isEdgeCell)
             {
-                case CellType.Empty:
-                    EditorGUI.DrawRect(rect, normalCellColor);
-                    break;
-                case CellType.Wall:
-                    EditorGUI.DrawRect(rect, emptyCellColor);
-                    break;
+                EditorGUI.DrawRect(rect, value.currentElement != null ? value.currentElement.color : exitCellDefaultColor);
             }
+            else
+            {
+                switch (value.cellType)
+                {
+                    case CellType.Empty:
+                        EditorGUI.DrawRect(rect, normalCellColor);
+                        break;
+                    case CellType.Wall:
+                        EditorGUI.DrawRect(rect, wallCellColor);
+                        break;
+                }
+            }
+
             // Element Display
-            if (value.cellType != CellType.Empty) // Only empty cells can have elements
+            if (!isEdgeCell && value.cellType != CellType.Empty) // Only empty interior cells can have elements
             {
                 value.currentElement = null;
             }
             if(value.currentElement != null)
             {
                 EditorGUI.DrawRect(elementRect, value.currentElement.color);
-                if (value.currentElement.elementSprite != null)
+                if (!isEdgeCell && value.currentElement.elementSprite != null)
                 {
                     GUI.DrawTexture(elementRect, value.currentElement.elementSprite.texture, ScaleMode.ScaleToFit, true, 1, value.currentElement.color, Vector4.zero, Vector4.zero);
                 }
@@ -99,11 +113,11 @@ namespace Game
                 // Cell Type Changes
                 if (Event.current.type == EventType.KeyDown)
                 {
-                    if (Event.current.keyCode == KeyCode.E) // Empty
+                    if (Event.current.keyCode == KeyCode.E && !isEdgeCell) // Empty
                     {
                         value.cellType = CellType.Empty;
                     }
-                    else if (Event.current.keyCode == KeyCode.W) // Wall
+                    else if (Event.current.keyCode == KeyCode.W && !isEdgeCell) // Wall
                     {
                         value.cellType = CellType.Wall;
                         value.currentElement = null;
@@ -126,7 +140,7 @@ namespace Game
                 List<ElementData> elementPool = GameManager.Instance.elementData;
                 if (Event.current.type == EventType.MouseDown && Event.current.button == 1)
                 {
-                    if (value.cellType == CellType.Empty)
+                    if (isEdgeCell || value.cellType == CellType.Empty)
                     {
                         if (elementPool.Count > 0)
                         {

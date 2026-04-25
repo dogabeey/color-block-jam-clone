@@ -47,14 +47,19 @@ namespace Game
                 for (int y = 0; y < height; y++)
                 {
                     CellData cellData = layout[x, y];
+                    Vector2Int position = new Vector2Int(x, y);
+                    bool isEdgeCell = Grid3D.IsEdgeCoordinate(position, width, height);
+                    ElementData exitElement = isEdgeCell && cellData != null ? cellData.currentElement : null;
+                    CellType runtimeCellType = isEdgeCell
+                        ? CellType.Wall
+                        : (cellData != null ? cellData.cellType : CellType.Empty);
 
                     GridCellController cell = Instantiate(gridCellPrefab, grid3D.transform);
                     cell.transform.localPosition = new Vector3(x, 0f, y);
-                    cell.gridPosition = new Vector2Int(x, y);
-                    cell.cellType = cellData != null ? cellData.cellType : CellType.Empty;
+                    cell.Configure(position, runtimeCellType, isEdgeCell, exitElement);
                     grid3D.gridCellControllers[x, y] = cell;
 
-                    if (cellData != null && cellData.cellType == CellType.Empty && cellData.currentElement != null && gridElementPrefab != null)
+                    if (!isEdgeCell && cellData != null && cellData.cellType == CellType.Empty && cellData.currentElement != null && gridElementPrefab != null)
                     {
                         GridElement element = Instantiate(gridElementPrefab, cell.transform);
                         element.transform.localPosition = Vector3.zero;
