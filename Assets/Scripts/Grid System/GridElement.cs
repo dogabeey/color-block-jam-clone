@@ -253,6 +253,11 @@ namespace Game
 
             TryMoveTowardsDesiredDelta(desiredDelta, desiredContinuousDelta);
             UpdateVisualOffset(desiredContinuousDelta);
+
+            if (TryExitIfAlignedWithAdjacentExit())
+            {
+                return;
+            }
         }
 
         private static void UpdateVisualOffset(Vector2 desiredContinuousDelta)
@@ -386,7 +391,83 @@ namespace Game
                 }
 
                 ApplyDelta(candidateDelta);
+                if (activeDrag == null)
+                {
+                    return;
+                }
             }
+        }
+
+        private static bool TryExitIfAlignedWithAdjacentExit()
+        {
+            if (activeDrag == null || activeDrag.leader == null || activeDrag.leader.elementData == null)
+            {
+                return false;
+            }
+
+            GridCellController[,] cells = activeDrag.rootGrid.gridCellControllers;
+            int width = cells.GetLength(0);
+            int height = cells.GetLength(1);
+
+            List<Vector2Int> currentPositions = new List<Vector2Int>(activeDrag.movingElements.Count);
+            for (int i = 0; i < activeDrag.movingElements.Count; i++)
+            {
+                GridElement element = activeDrag.movingElements[i];
+                if (element == null || element.currentCell == null)
+                {
+                    return false;
+                }
+
+                currentPositions.Add(element.currentCell.gridPosition);
+            }
+
+            ExitSide[] candidateSides = { ExitSide.Left, ExitSide.Right, ExitSide.Bottom, ExitSide.Top };
+            for (int sideIndex = 0; sideIndex < candidateSides.Length; sideIndex++)
+            {
+                ExitSide side = candidateSides[sideIndex];
+                if (!AreCurrentPositionsAlignedWithExit(currentPositions, side, width, height))
+                {
+                    continue;
+                }
+
+                if (!ArePositionsContiguousAlongExit(currentPositions, side))
+                {
+                    continue;
+                }
+
+                Vector2Int exitDirection = GetExitDirection(side);
+                List<Vector2Int> exitPositions = new List<Vector2Int>(currentPositions.Count);
+                bool allMatch = true;
+
+                for (int i = 0; i < currentPositions.Count; i++)
+                {
+                    Vector2Int exitPosition = currentPositions[i] + exitDirection;
+                    if (exitPosition.x < 0 || exitPosition.y < 0 || exitPosition.x >= width || exitPosition.y >= height)
+                    {
+                        allMatch = false;
+                        break;
+                    }
+
+                    GridCellController exitCell = cells[exitPosition.x, exitPosition.y];
+                    if (exitCell == null || !exitCell.isExitCell || exitCell.exitElementData != activeDrag.leader.elementData)
+                    {
+                        allMatch = false;
+                        break;
+                    }
+
+                    exitPositions.Add(exitPosition);
+                }
+
+                if (!allMatch || !ArePositionsContiguousAlongExit(exitPositions, side))
+                {
+                    continue;
+                }
+
+                BeginExit(exitDirection);
+                return true;
+            }
+
+            return false;
         }
 
         private static bool TryApplyExitStep(Vector2Int step)
@@ -467,6 +548,17 @@ namespace Game
                 return false;
             }
 
+            BeginExit(step);
+            return true;
+        }
+
+        private static void BeginExit(Vector2Int direction)
+        {
+            if (activeDrag == null)
+            {
+                return;
+            }
+
             DragContext exitingDrag = activeDrag;
 
             for (int i = 0; i < exitingDrag.movingElements.Count; i++)
@@ -490,10 +582,20 @@ namespace Game
             if (exitingDrag.rootGrid != null)
             {
                 float duration = exitingDrag.leader != null ? exitingDrag.leader.snapDuration : 0.12f;
-                exitingDrag.rootGrid.StartCoroutine(ExitAndDestroy(exitingDrag.movingElements, step, duration));
+                exitingDrag.rootGrid.StartCoroutine(ExitAndDestroy(exitingDrag.movingElements, direction, duration));
             }
+        }
 
-            return true;
+        private static Vector2Int GetExitDirection(ExitSide side)
+        {
+            return side switch
+            {
+                ExitSide.Left => Vector2Int.left,
+                ExitSide.Right => Vector2Int.right,
+                ExitSide.Bottom => Vector2Int.down,
+                ExitSide.Top => Vector2Int.up,
+                _ => Vector2Int.zero,
+            };
         }
 
         private static bool TryGetExitSide(Vector2Int position, int width, int height, out ExitSide side)
@@ -738,6 +840,11 @@ namespace Game
 
             TryMoveTowardsDesiredDelta(roundedTarget, roundedTarget);
 
+            if (TryExitIfAlignedWithAdjacentExit())
+            {
+                return;
+            }
+
             Vector2 targetVisualOffset = new Vector2(
                 roundedTarget.x - activeDrag.appliedDelta.x,
                 roundedTarget.y - activeDrag.appliedDelta.y);
@@ -840,7 +947,16 @@ namespace Game
                 if (CanApplyDelta(finalDelta))
                 {
                     ApplyDelta(finalDelta);
+                    if (activeDrag == null)
+                    {
+                        yield break;
+                    }
                 }
+            }
+
+            if (TryExitIfAlignedWithAdjacentExit())
+            {
+                yield break;
             }
 
             for (int i = 0; i < drag.movingElements.Count; i++)
