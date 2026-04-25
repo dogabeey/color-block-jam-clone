@@ -100,7 +100,6 @@ namespace Game
                         break;
                 }
             }
-
             // Element Display
             if (!isEdgeCell && value.cellType != CellType.Empty) // Only empty interior cells can have elements
             {
@@ -116,7 +115,27 @@ namespace Game
                 // Grid Indicator
                 GUI.Label(elementRect, value.elementGroupIndex == 0 ? "" : value.elementGroupIndex.ToString(), indexStyle);
             }
-
+            // Arrow Indicators for Directional Restrictions
+            if (value.movementRestriction == DirectionRestriction.HorizontalOnly)
+            {
+                Vector3 center = new Vector3(rect.center.x, rect.center.y, 0);
+                Vector3 left = new Vector3(rect.xMin + rect.width * 0.25f, rect.center.y, 0);
+                Vector3 right = new Vector3(rect.xMax - rect.width * 0.25f, rect.center.y, 0);
+                Handles.color = Color.red;
+                Handles.DrawLine(left, center);
+                Handles.DrawLine(right, center);
+                Handles.DrawLine(left, right);
+            }
+            else if (value.movementRestriction == DirectionRestriction.VerticalOnly)
+            {
+                Vector3 center = new Vector3(rect.center.x, rect.center.y, 0);
+                Vector3 top = new Vector3(rect.center.x, rect.yMax - rect.height * 0.25f, 0);
+                Vector3 bottom = new Vector3(rect.center.x, rect.yMin + rect.height * 0.25f, 0);
+                Handles.color = Color.red;
+                Handles.DrawLine(top, center);
+                Handles.DrawLine(bottom, center);
+                Handles.DrawLine(top, bottom);
+            }
 
             // INTERACTION
             if (rect.Contains(Event.current.mousePosition))

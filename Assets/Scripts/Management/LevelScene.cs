@@ -85,6 +85,7 @@ namespace Game
                         element.transform.localPosition = Vector3.zero;
                         element.elementData = cellData.currentElement;
                         element.groupIndex = cellData.elementGroupIndex;
+                        element.movementRestriction = cellData.movementRestriction;
                         element.currentCell = cell;
                         element.Init();
                         cell.currentElement = element;

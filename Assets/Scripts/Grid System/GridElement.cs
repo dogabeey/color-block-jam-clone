@@ -1,19 +1,20 @@
 using UnityEngine;
 using System.Collections.Generic;
 using DG.Tweening;
-using Sirenix.Utilities;
 
 namespace Game
 {
     public class GridElement : Grid3D // Each element is also a grid, allowing for nested grids if needed (Like stacked blocks or "containers" that can hold other elements)
     {
-        [Header("Element Data")]
-        public ElementData elementData; 
-        public int groupIndex; // Same indexed element groups will act as one. They will be moved together and their tiles will be generated accordingly. 0 means no group.
+        internal ElementData elementData; 
+        internal int groupIndex; // Same indexed element groups will act as one. They will be moved together and their tiles will be generated accordingly. 0 means no group.
+        internal GridCellController currentCell; // The cell this element is currently occupying. This will be used for movement and tile generation.
+        internal DirectionRestriction movementRestriction;
 
         [Header("References")]
-        public GridCellController currentCell; // The cell this element is currently occupying. This will be used for movement and tile generation.
         public Renderer elementRenderer;
+        public SpriteRenderer verticalArrow;
+        public SpriteRenderer horizontalArrow;
 
         [Header("Input")]
         public bool enableInput = true;
@@ -51,6 +52,21 @@ namespace Game
                     }
                     skinnedMeshRenderer.material.color = elementData.color;
                 }
+            }
+
+            UpdateRestrictionArrows();
+        }
+
+        private void UpdateRestrictionArrows()
+        {
+            if (verticalArrow != null)
+            {
+                verticalArrow.gameObject.SetActive(movementRestriction == DirectionRestriction.VerticalOnly);
+            }
+
+            if (horizontalArrow != null)
+            {
+                horizontalArrow.gameObject.SetActive(movementRestriction == DirectionRestriction.HorizontalOnly);
             }
         }
 
@@ -894,6 +910,8 @@ namespace Game
                 return false;
             }
 
+            Vector2Int movementDelta = delta - activeDrag.appliedDelta;
+
             GridCellController[,] cells = activeDrag.rootGrid.gridCellControllers;
             int width = cells.GetLength(0);
             int height = cells.GetLength(1);
@@ -903,6 +921,11 @@ namespace Game
             for (int i = 0; i < activeDrag.movingElements.Count; i++)
             {
                 GridElement element = activeDrag.movingElements[i];
+                if (!AllowsMovementForRestriction(element, movementDelta))
+                {
+                    return false;
+                }
+
                 if (!activeDrag.startCoordinates.TryGetValue(element, out Vector2Int startPosition))
                 {
                     return false;
@@ -937,6 +960,21 @@ namespace Game
             }
 
             return true;
+        }
+
+        private static bool AllowsMovementForRestriction(GridElement element, Vector2Int movementDelta)
+        {
+            if (element == null || movementDelta == Vector2Int.zero)
+            {
+                return true;
+            }
+
+            return element.movementRestriction switch
+            {
+                DirectionRestriction.HorizontalOnly => movementDelta.y == 0,
+                DirectionRestriction.VerticalOnly => movementDelta.x == 0,
+                _ => true,
+            };
         }
 
         private static void ApplyDelta(Vector2Int delta)
