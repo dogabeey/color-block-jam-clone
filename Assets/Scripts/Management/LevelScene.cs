@@ -50,6 +50,8 @@ namespace Game
 
                     GridCellController cell = Instantiate(gridCellPrefab, grid3D.transform);
                     cell.transform.localPosition = new Vector3(x, 0f, y);
+                    cell.gridPosition = new Vector2Int(x, y);
+                    cell.cellType = cellData != null ? cellData.cellType : CellType.Empty;
                     grid3D.gridCellControllers[x, y] = cell;
 
                     if (cellData != null && cellData.cellType == CellType.Empty && cellData.currentElement != null && gridElementPrefab != null)
@@ -57,6 +59,8 @@ namespace Game
                         GridElement element = Instantiate(gridElementPrefab, cell.transform);
                         element.transform.localPosition = Vector3.zero;
                         element.elementData = cellData.currentElement;
+                        element.groupIndex = cellData.elementGroupIndex;
+                        element.currentCell = cell;
                         element.Init();
                         cell.currentElement = element;
                     }

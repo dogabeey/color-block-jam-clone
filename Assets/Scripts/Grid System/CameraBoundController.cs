@@ -145,18 +145,46 @@ namespace Game
             MinBounds = min;
             MaxBounds = max;
 
-            Vector3 cameraPosition = mainCamera.transform.position;
-            ApplyPlaneCenterToPosition(ref cameraPosition, plane, (MinBounds.x + MaxBounds.x) * 0.5f, (MinBounds.y + MaxBounds.y) * 0.5f);
-            mainCamera.transform.position = cameraPosition;
+            float centerA = (MinBounds.x + MaxBounds.x) * 0.5f;
+            float centerB = (MinBounds.y + MaxBounds.y) * 0.5f;
 
-            float boundsHeight = Mathf.Max(0.0001f, MaxBounds.y - MinBounds.y);
-            float boundsWidth = Mathf.Max(0.0001f, MaxBounds.x - MinBounds.x);
-            float aspect = Mathf.Max(0.0001f, mainCamera.aspect);
+            float fixedAxis = GetPlaneFixedAxis(mainCamera.transform.position, plane);
+            if (TryGetPlaneFixedAxisValue(plane, out float sampledAxis))
+            {
+                fixedAxis = sampledAxis;
+            }
 
-            float sizeFromHeight = boundsHeight * 0.5f;
-            float sizeFromWidth = (boundsWidth * 0.5f) / aspect;
+            Vector3 planeCenter = GetWorldPointOnPlane(plane, centerA, centerB, fixedAxis);
+            if (TryGetRayDistanceToPlane(mainCamera.transform.position, mainCamera.transform.forward, plane, fixedAxis, out float rayDistance))
+            {
+                mainCamera.transform.position = planeCenter - (mainCamera.transform.forward * rayDistance);
+            }
+            else
+            {
+                Vector3 cameraPosition = mainCamera.transform.position;
+                ApplyPlaneCenterToPosition(ref cameraPosition, plane, centerA, centerB);
+                mainCamera.transform.position = cameraPosition;
+            }
 
-            mainCamera.orthographicSize = Mathf.Max(sizeFromHeight, sizeFromWidth);
+            if (TryGetPlaneWorldCorners(plane, fixedAxis, MinBounds, MaxBounds, out Vector3 c0, out Vector3 c1, out Vector3 c2, out Vector3 c3))
+            {
+                Vector3 right = mainCamera.transform.right;
+                Vector3 up = mainCamera.transform.up;
+
+                float minRight = Mathf.Min(Vector3.Dot(c0, right), Vector3.Dot(c1, right), Vector3.Dot(c2, right), Vector3.Dot(c3, right));
+                float maxRight = Mathf.Max(Vector3.Dot(c0, right), Vector3.Dot(c1, right), Vector3.Dot(c2, right), Vector3.Dot(c3, right));
+                float minUp = Mathf.Min(Vector3.Dot(c0, up), Vector3.Dot(c1, up), Vector3.Dot(c2, up), Vector3.Dot(c3, up));
+                float maxUp = Mathf.Max(Vector3.Dot(c0, up), Vector3.Dot(c1, up), Vector3.Dot(c2, up), Vector3.Dot(c3, up));
+
+                float projectedWidth = Mathf.Max(0.0001f, maxRight - minRight);
+                float projectedHeight = Mathf.Max(0.0001f, maxUp - minUp);
+                float aspect = Mathf.Max(0.0001f, mainCamera.aspect);
+
+                float sizeFromHeight = projectedHeight * 0.5f;
+                float sizeFromWidth = (projectedWidth * 0.5f) / aspect;
+
+                mainCamera.orthographicSize = Mathf.Max(sizeFromHeight, sizeFromWidth);
+            }
             hasCalibrated = true;
         }
 
@@ -216,6 +244,109 @@ namespace Game
                     position.z = axisB;
                     break;
             }
+        }
+
+        private static float GetPlaneFixedAxis(Vector3 position, Plane plane)
+        {
+            switch (plane)
+            {
+                case Plane.XY:
+                    return position.z;
+                case Plane.XZ:
+                    return position.y;
+                case Plane.YZ:
+                    return position.x;
+                default:
+                    return position.z;
+            }
+        }
+
+        private static bool TryGetPlaneFixedAxisValue(Plane plane, out float axisValue)
+        {
+            axisValue = 0f;
+
+            LevelScene level = GameManager.Instance.currentLoadedLevel;
+            if (level == null || level.grid3D == null || level.grid3D.gridCellControllers == null)
+                return false;
+
+            GridCellController[,] cells = level.grid3D.gridCellControllers;
+            int width = cells.GetLength(0);
+            int height = cells.GetLength(1);
+
+            float sum = 0f;
+            int count = 0;
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    GridCellController cell = cells[x, y];
+                    if (cell == null)
+                        continue;
+
+                    sum += GetPlaneFixedAxis(cell.transform.position, plane);
+                    count++;
+                }
+            }
+
+            if (count == 0)
+                return false;
+
+            axisValue = sum / count;
+            return true;
+        }
+
+        private static Vector3 GetWorldPointOnPlane(Plane plane, float axisA, float axisB, float fixedAxis)
+        {
+            switch (plane)
+            {
+                case Plane.XY:
+                    return new Vector3(axisA, axisB, fixedAxis);
+                case Plane.XZ:
+                    return new Vector3(axisA, fixedAxis, axisB);
+                case Plane.YZ:
+                    return new Vector3(fixedAxis, axisA, axisB);
+                default:
+                    return new Vector3(axisA, axisB, fixedAxis);
+            }
+        }
+
+        private static Vector3 GetPlaneNormal(Plane plane)
+        {
+            switch (plane)
+            {
+                case Plane.XY:
+                    return Vector3.forward;
+                case Plane.XZ:
+                    return Vector3.up;
+                case Plane.YZ:
+                    return Vector3.right;
+                default:
+                    return Vector3.forward;
+            }
+        }
+
+        private static bool TryGetRayDistanceToPlane(Vector3 rayOrigin, Vector3 rayDirection, Plane plane, float fixedAxis, out float distance)
+        {
+            distance = 0f;
+
+            Vector3 normal = GetPlaneNormal(plane);
+            float denominator = Vector3.Dot(rayDirection, normal);
+            if (Mathf.Abs(denominator) < 0.00001f)
+                return false;
+
+            Vector3 planePoint = GetWorldPointOnPlane(plane, 0f, 0f, fixedAxis);
+            distance = Vector3.Dot(planePoint - rayOrigin, normal) / denominator;
+            return true;
+        }
+
+        private static bool TryGetPlaneWorldCorners(Plane plane, float fixedAxis, Vector2 min, Vector2 max, out Vector3 c0, out Vector3 c1, out Vector3 c2, out Vector3 c3)
+        {
+            c0 = GetWorldPointOnPlane(plane, min.x, min.y, fixedAxis);
+            c1 = GetWorldPointOnPlane(plane, max.x, min.y, fixedAxis);
+            c2 = GetWorldPointOnPlane(plane, max.x, max.y, fixedAxis);
+            c3 = GetWorldPointOnPlane(plane, min.x, max.y, fixedAxis);
+            return true;
         }
 
         private static bool TryEstimateGridTransform(Grid3D grid, Vector2Int size, Plane plane, out Vector2 origin, out Vector2 stepX, out Vector2 stepY)
