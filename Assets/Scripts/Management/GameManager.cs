@@ -77,6 +77,7 @@ namespace Game
 
         public void LoadLevel()
         {
+            screenManager.CloseAllScreens();
             if (levelScenes.Count == 0)
             {
                 Debug.LogError("No level scenes assigned in GameManager.", this);
@@ -93,7 +94,6 @@ namespace Game
         public void LoadNextLevel()
         {
             CurrentLevelIndex++;
-            screenManager.CloseAllScreens();
             LoadLevel();
         }
 
