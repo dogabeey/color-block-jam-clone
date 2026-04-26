@@ -84,6 +84,10 @@ namespace Game
             }
             int levelIndex = CurrentLevelIndex % levelScenes.Count;
             LevelScene levelScene = levelScenes[levelIndex];
+            if(currentLoadedLevel != null)
+            {
+                Destroy(currentLoadedLevel.gameObject);
+            }
             currentLoadedLevel = Instantiate(levelScene);
         }
         public void LoadNextLevel()
