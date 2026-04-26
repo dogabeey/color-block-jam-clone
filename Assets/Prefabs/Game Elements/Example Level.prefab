@@ -92,6 +92,9 @@ MonoBehaviour:
   levelData: {fileID: 11400000, guid: 29a1f530093074449ba37672113adbd5, type: 2}
   winTrigger: 0
   loseTrigger: 0
-  gridCellPrefab: {fileID: 0}
-  gridElementPrefab: {fileID: 0}
+  timerSeconds: 60
+  remainingTime: 0
+  gridCellPrefab: {fileID: 7026305415026314639, guid: 3dc5a9e2f6cb2984b93f395246195c79, type: 3}
+  gridElementPrefab: {fileID: 6669349732597888336, guid: 2c102565afb422d41a45ca9e72958921, type: 3}
+  exitGatePrefab: {fileID: 6530216437892190490, guid: 627b17cb33438f1439e5d64936bb9e7a, type: 3}
   grid3D: {fileID: 7804678544262357557}
