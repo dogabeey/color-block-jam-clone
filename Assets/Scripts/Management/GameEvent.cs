@@ -12,5 +12,8 @@ namespace Game
         GRID_INITIALIZED = 200,
         BLOCK_CLEARED = 201,
         BOARD_CLEARED = 202,
+        
+        LEVEL_TIMER_TICK = 303,
+        LEVEL_TIMER_EXPIRE = 304,
     }
 }

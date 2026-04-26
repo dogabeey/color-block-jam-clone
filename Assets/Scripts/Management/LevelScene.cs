@@ -1,3 +1,4 @@
+using System.Collections;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -8,6 +9,9 @@ namespace Game
         [InlineEditor]
         public LevelData levelData;
         public GameEvent winTrigger, loseTrigger;
+        [Header("Settings")]
+        public int timerSeconds = 60;
+        [ReadOnly] public float remainingTime = 0;
         [Header("Prefabs")]
         [AssetsOnly]
         public GridCellController gridCellPrefab;
@@ -23,6 +27,19 @@ namespace Game
         private void Start()
         {
             BuildGridFromLevelData();
+        }
+
+        public IEnumerator StartLevelTimer()
+        {
+            remainingTime = timerSeconds;
+            while (remainingTime > 0f)
+            {
+                yield return new WaitForSeconds(1f);
+                remainingTime -= 1;
+                EventManager.TriggerEvent(GameEvent.LEVEL_TIMER_TICK);
+            }
+            EventManager.TriggerEvent(GameEvent.LEVEL_TIMER_EXPIRE);
+            Lose();
         }
 
         private void BuildGridFromLevelData()

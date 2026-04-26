@@ -92,7 +92,7 @@ namespace Game
 
             mainCamera.orthographic = true;
 
-            MonoBehaviour[] components = FindObjectsOfType<MonoBehaviour>(false);
+            MonoBehaviour[] components = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
             bool hasAny = false;
             Vector2 min = Vector2.zero;
