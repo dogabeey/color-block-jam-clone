@@ -24,7 +24,7 @@ namespace Game
         public void Show(ScreenID screenID)
         {
             screens.ForEach(screen => screen.gameObject.SetActive(false));
-            GameScreen gameScreen = screens.Find(screen => screen.panelID == screenID);
+            GameScreen gameScreen = screens.Find(screen => screen.PanelID == screenID);
             ShowScreen(gameScreen);
         }
         public void CloseAllScreens()

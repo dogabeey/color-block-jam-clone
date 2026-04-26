@@ -26,4 +26,5 @@ namespace Game
                 animator.Play(playAnimationName);
             }
         }
+    }
 }
