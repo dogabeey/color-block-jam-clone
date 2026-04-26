@@ -19,6 +19,8 @@ namespace Game
         public GridElement gridElementPrefab;
         [AssetsOnly]
         public ExitGateController exitGatePrefab;
+        [AssetsOnly]
+        public GameObject cornerObject;
         [Header("References")]
         public Grid3D grid3D;
 
@@ -96,6 +98,18 @@ namespace Game
                         cell.exitGate = exitGate;
                     }
 
+                    if (isCornerCell && cornerObject != null)
+                    {
+                        GameObject corner = Instantiate(cornerObject, cell.transform);
+                        corner.transform.localPosition = Vector3.zero;
+
+                        Vector3 cornerDirection = GetCornerDirection(position, width, height);
+                        if (cornerDirection != Vector3.zero)
+                        {
+                            corner.transform.rotation = Quaternion.LookRotation(grid3D.transform.TransformDirection(cornerDirection), grid3D.transform.up);
+                        }
+                    }
+
                     grid3D.gridCellControllers[x, y] = cell;
 
                     if (!isEdgeCell && cellData != null && cellData.cellType == CellType.Empty && cellData.currentElement != null && gridElementPrefab != null)
@@ -135,6 +149,31 @@ namespace Game
             if (position.y == height - 1)
             {
                 return Vector3.forward;
+            }
+
+            return Vector3.zero;
+        }
+
+        private static Vector3 GetCornerDirection(Vector2Int position, int width, int height)
+        {
+            if (position.x == 0 && position.y == 0)
+            {
+                return (Vector3.left + Vector3.back).normalized;
+            }
+
+            if (position.x == width - 1 && position.y == 0)
+            {
+                return (Vector3.right + Vector3.back).normalized;
+            }
+
+            if (position.x == 0 && position.y == height - 1)
+            {
+                return (Vector3.left + Vector3.forward).normalized;
+            }
+
+            if (position.x == width - 1 && position.y == height - 1)
+            {
+                return (Vector3.right + Vector3.forward).normalized;
             }
 
             return Vector3.zero;

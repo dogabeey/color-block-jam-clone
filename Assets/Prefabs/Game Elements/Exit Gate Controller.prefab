@@ -159,8 +159,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game::Game.ExitGateController
   animatedPart: {fileID: 8769442997894991802}
-  gateRenderer: {fileID: 0}
-  defaultGateColor: {r: 0.45, g: 0.45, b: 0.45, a: 1}
+  gateRenderer: {fileID: 7177471865597919220}
+  defaultGateColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
   loweredOffset: -0.2
   lowerBlendPortion: 0.25
   raiseBlendPortion: 0.25
