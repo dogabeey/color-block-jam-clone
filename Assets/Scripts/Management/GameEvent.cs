@@ -10,5 +10,7 @@ namespace Game
         LEVEL_STARTED = 102,
 
         GRID_INITIALIZED = 200,
+        BLOCK_CLEARED = 201,
+        BOARD_CLEARED = 202,
     }
 }

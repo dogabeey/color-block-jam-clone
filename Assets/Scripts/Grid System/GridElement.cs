@@ -763,6 +763,22 @@ namespace Game
 
             sequence.OnComplete(() =>
             {
+                int clearedCount = 0;
+                HashSet<GridElement> clearedElements = new HashSet<GridElement>();
+
+                for (int i = 0; i < elements.Count; i++)
+                {
+                    GridElement element = elements[i];
+                    if (element == null)
+                    {
+                        continue;
+                    }
+
+                    SpawnBlockExitParticle(element);
+                    clearedElements.Add(element);
+                    clearedCount++;
+                }
+
                 for (int i = 0; i < elements.Count; i++)
                 {
                     GridElement element = elements[i];
@@ -771,7 +787,85 @@ namespace Game
                         Object.Destroy(element.gameObject);
                     }
                 }
+
+                if (clearedCount > 0)
+                {
+                    ElementData clearedType = elements[0] != null ? elements[0].elementData : null;
+                    EventManager.TriggerEvent(GameEvent.BLOCK_CLEARED, new EventParam(paramScriptable: clearedType, paramInt: clearedCount));
+                }
+
+                Grid3D rootGrid = GetRootGrid();
+                int remainingCount = CountRemainingBoardElements(rootGrid, clearedElements);
+                if (remainingCount == 0)
+                {
+                    EventManager.TriggerEvent(GameEvent.BOARD_CLEARED, new EventParam(paramInt: 0));
+                }
             });
+        }
+
+        private static int CountRemainingBoardElements(Grid3D rootGrid, HashSet<GridElement> excluded)
+        {
+            if (rootGrid == null)
+            {
+                return 0;
+            }
+
+            GridElement[] allElements = Object.FindObjectsByType<GridElement>(FindObjectsSortMode.None);
+            int remaining = 0;
+
+            for (int i = 0; i < allElements.Length; i++)
+            {
+                GridElement element = allElements[i];
+                if (element == null)
+                {
+                    continue;
+                }
+
+                if (excluded != null && excluded.Contains(element))
+                {
+                    continue;
+                }
+
+                if (element.currentCell == null || element.currentCell.transform.parent != rootGrid.transform)
+                {
+                    continue;
+                }
+
+                remaining++;
+            }
+
+            return remaining;
+        }
+
+        private static void SpawnBlockExitParticle(GridElement element)
+        {
+            if (element == null)
+            {
+                return;
+            }
+
+            ConstantManager constantManager = GameManager.Instance != null ? GameManager.Instance.constantManager : null;
+            if (constantManager == null || constantManager.blockExitParticlePrefab == null)
+            {
+                return;
+            }
+
+            ParticleSystem particle = Object.Instantiate(constantManager.blockExitParticlePrefab, element.transform.position, Quaternion.identity);
+            if (particle == null)
+            {
+                return;
+            }
+
+            ParticleSystem.MainModule main = particle.main;
+            if (element.elementData != null)
+            {
+                main.startColor = element.elementData.color;
+            }
+
+            particle.Play();
+
+            float lifetime = main.duration + main.startLifetime.constantMax + 0.25f;
+            Object.Destroy(particle.gameObject, lifetime);
         }
 
         private static void TriggerExitGates(List<GridCellController> exitCells, float duration)

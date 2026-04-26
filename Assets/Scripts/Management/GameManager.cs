@@ -86,6 +86,11 @@ namespace Game
             LevelScene levelScene = levelScenes[levelIndex];
             currentLoadedLevel = Instantiate(levelScene);
         }
+        public void LoadNextLevel()
+        {
+            CurrentLevelIndex++;
+            LoadLevel();
+        }
 
         public static void WinLevel()
         {

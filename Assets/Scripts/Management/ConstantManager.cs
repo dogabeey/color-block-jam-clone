@@ -11,6 +11,9 @@ namespace Game
 
         [Header("Block Movement Configuration")]
         public float blockExitMoveSpeed = 6f;
+
+        [Header("VFX")]
+        public ParticleSystem blockExitParticlePrefab;
         
     }
 }

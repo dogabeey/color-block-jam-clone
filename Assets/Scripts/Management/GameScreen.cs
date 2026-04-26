@@ -1,13 +1,15 @@
 using Sirenix.OdinInspector;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 namespace Game
 {
     public abstract class GameScreen : SerializedMonoBehaviour
     {
-        public ScreenID panelID;
+        public abstract ScreenID PanelID { get; }
+
         public Animator animator;
         public string playAnimationName;
 
