@@ -107,6 +107,21 @@ namespace Game
                 return;
             }
 
+            if (activeDrag != null)
+            {
+                if (activeDrag.movingElements == null || activeDrag.movingElements.Count == 0)
+                {
+                    CancelActiveDrag();
+                    return;
+                }
+
+                if (activeDrag.isSnapping && (activeDrag.snapSequence == null || !activeDrag.snapSequence.IsActive()))
+                {
+                    CancelActiveDrag();
+                    return;
+                }
+            }
+
             if (activeDrag == null)
             {
                 if (IsPointerDownThisFrame() && TryGetPointerScreenPosition(out Vector2 pointerScreenPosition))
@@ -148,9 +163,18 @@ namespace Game
 
         private static bool IsPointerReleasedThisFrame()
         {
-            return Input.touchCount > 0
-                ? Input.GetTouch(0).phase == TouchPhase.Ended || Input.GetTouch(0).phase == TouchPhase.Canceled
-                : Input.GetMouseButtonUp(0);
+            if (Input.touchCount > 0)
+            {
+                TouchPhase phase = Input.GetTouch(0).phase;
+                return phase == TouchPhase.Ended || phase == TouchPhase.Canceled;
+            }
+
+            if (activeDrag != null && !Input.GetMouseButton(0) && !Input.GetMouseButtonUp(0))
+            {
+                return true;
+            }
+
+            return Input.GetMouseButtonUp(0);
         }
 
         private static bool TryGetPointerScreenPosition(out Vector2 position)
@@ -1070,6 +1094,36 @@ namespace Game
 
             activeDrag.isSnapping = true;
             StartSnapRelease(targetVisualOffset);
+        }
+
+        private static void CancelActiveDrag()
+        {
+            if (activeDrag == null)
+            {
+                return;
+            }
+
+            DragContext drag = activeDrag;
+
+            if (drag.snapSequence != null && drag.snapSequence.IsActive())
+            {
+                drag.snapSequence.Kill(false);
+                drag.snapSequence = null;
+            }
+
+            if (drag.movingElements != null)
+            {
+                for (int i = 0; i < drag.movingElements.Count; i++)
+                {
+                    GridElement element = drag.movingElements[i];
+                    if (element != null)
+                    {
+                        element.transform.localPosition = Vector3.zero;
+                    }
+                }
+            }
+
+            activeDrag = null;
         }
 
         private static void StartSnapRelease(Vector2 targetVisualOffset)
