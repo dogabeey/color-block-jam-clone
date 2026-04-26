@@ -15,5 +15,7 @@ namespace Game
         
         LEVEL_TIMER_TICK = 303,
         LEVEL_TIMER_EXPIRE = 304,
+
+        ELEMENT_MOVE = 400,
     }
 }

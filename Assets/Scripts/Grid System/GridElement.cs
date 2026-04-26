@@ -213,6 +213,8 @@ namespace Game
                 activeDrag.startCoordinates[element] = element.currentCell.gridPosition;
                 element.transform.localPosition = Vector3.up * element.dragLiftHeight;
             }
+
+            EventManager.TriggerEvent(GameEvent.ELEMENT_MOVE);
         }
 
         private static List<GridElement> CollectGroupedElements(GridElement leader, Grid3D rootGrid)
@@ -903,99 +905,6 @@ namespace Game
             };
         }
 
-        private static bool TryGetExitSide(Vector2Int position, int width, int height, out ExitSide side)
-        {
-            side = ExitSide.None;
-            if (position.x == 0)
-            {
-                side = ExitSide.Left;
-                return true;
-            }
-
-            if (position.x == width - 1)
-            {
-                side = ExitSide.Right;
-                return true;
-            }
-
-            if (position.y == 0)
-            {
-                side = ExitSide.Bottom;
-                return true;
-            }
-
-            if (position.y == height - 1)
-            {
-                side = ExitSide.Top;
-                return true;
-            }
-
-            return false;
-        }
-
-        private static bool AreCurrentPositionsAlignedWithExit(List<Vector2Int> positions, ExitSide side, int width, int height)
-        {
-            if (positions.Count == 0)
-            {
-                return false;
-            }
-
-            int expectedLine = side switch
-            {
-                ExitSide.Left => 1,
-                ExitSide.Right => width - 2,
-                ExitSide.Bottom => 1,
-                ExitSide.Top => height - 2,
-                _ => int.MinValue,
-            };
-
-            if (expectedLine == int.MinValue)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < positions.Count; i++)
-            {
-                Vector2Int position = positions[i];
-                if ((side == ExitSide.Left || side == ExitSide.Right) && position.x != expectedLine)
-                {
-                    return false;
-                }
-
-                if ((side == ExitSide.Bottom || side == ExitSide.Top) && position.y != expectedLine)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private static bool ArePositionsContiguousAlongExit(List<Vector2Int> positions, ExitSide side)
-        {
-            if (positions.Count <= 1)
-            {
-                return positions.Count == 1;
-            }
-
-            List<int> varyingAxisValues = new List<int>(positions.Count);
-            for (int i = 0; i < positions.Count; i++)
-            {
-                varyingAxisValues.Add(side == ExitSide.Left || side == ExitSide.Right ? positions[i].y : positions[i].x);
-            }
-
-            varyingAxisValues.Sort();
-
-            for (int i = 1; i < varyingAxisValues.Count; i++)
-            {
-                if (varyingAxisValues[i] - varyingAxisValues[i - 1] != 1)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
 
         private static bool CanApplyDelta(Vector2Int delta)
         {

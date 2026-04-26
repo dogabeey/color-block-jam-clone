@@ -27,6 +27,8 @@ namespace Game
         private void Start()
         {
             BuildGridFromLevelData();
+            remainingTime = timerSeconds;
+            EventManager.TriggerEvent(GameEvent.LEVEL_STARTED);
         }
 
         public IEnumerator StartLevelTimer()
@@ -142,11 +144,13 @@ namespace Game
         {
             EventManager.StartListening(winTrigger, OnWinTriggered);
             EventManager.StartListening(loseTrigger, OnLoseTriggered);
+            EventManager.StartListening(GameEvent.ELEMENT_MOVE, OnElementMovedForFirstTime);
         }
         private void OnDisable()
         {
             EventManager.StopListening(winTrigger, OnWinTriggered);
             EventManager.StopListening(loseTrigger, OnLoseTriggered);
+            EventManager.StopListening(GameEvent.ELEMENT_MOVE, OnElementMovedForFirstTime);
         }
         private void OnWinTriggered(EventParam param)
         {
@@ -155,6 +159,11 @@ namespace Game
         private void OnLoseTriggered(EventParam param)
         {
             Lose();
+        }
+        private void OnElementMovedForFirstTime(EventParam param)
+        {
+            EventManager.StopListening(GameEvent.ELEMENT_MOVE, OnElementMovedForFirstTime);
+            StartCoroutine(StartLevelTimer());
         }
 
         private void Update()

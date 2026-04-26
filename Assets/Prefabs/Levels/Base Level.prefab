@@ -55,7 +55,7 @@ GameObject:
   - component: {fileID: 1498154286931013034}
   - component: {fileID: 7827360465860678067}
   m_Layer: 0
-  m_Name: Example Level
+  m_Name: Base Level
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -90,8 +90,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game::Game.LevelScene
   levelData: {fileID: 11400000, guid: 29a1f530093074449ba37672113adbd5, type: 2}
-  winTrigger: 0
-  loseTrigger: 0
+  winTrigger: 202
+  loseTrigger: 304
   timerSeconds: 60
   remainingTime: 0
   gridCellPrefab: {fileID: 7026305415026314639, guid: 3dc5a9e2f6cb2984b93f395246195c79, type: 3}

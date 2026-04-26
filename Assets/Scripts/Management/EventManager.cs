@@ -111,8 +111,8 @@ public class EventManager : ScriptableObject
             {
                 Debug.LogWarning($"Event '{eventName}' has some null listener(s). This might result events to notfiy its listeners correctly");
             }
-            thisEvent.Invoke(eventParam);
-            // OR USE  instance.eventDictionary[eventName](eventParam);
+            else
+                thisEvent.Invoke(eventParam);
         }
     }
 
