@@ -8,6 +8,11 @@ namespace Game
 
         public Button retryButton;
 
+        protected override void Awake()
+        {
+            base.Awake();
+        }
+
         private void Start()
         {
             if (retryButton != null)

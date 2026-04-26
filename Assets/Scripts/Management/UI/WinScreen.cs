@@ -8,6 +8,11 @@ namespace Game
 
         public Button nextLevelButton;
 
+        protected override void Awake()
+        {
+            base.Awake();
+        }
+
         private void Start()
         {
             if (nextLevelButton != null)

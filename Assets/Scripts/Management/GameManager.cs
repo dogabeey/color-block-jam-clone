@@ -93,6 +93,7 @@ namespace Game
         public void LoadNextLevel()
         {
             CurrentLevelIndex++;
+            screenManager.CloseAllScreens();
             LoadLevel();
         }
 

@@ -21,6 +21,15 @@ namespace Game
             }
         }
 
+        protected virtual void Awake()
+        {
+
+        }
+        private void OnDestroy()
+        {
+            GameManager.Instance.screenManager.screens.Remove(this);
+        }
+
         public abstract void Show();
     }
 

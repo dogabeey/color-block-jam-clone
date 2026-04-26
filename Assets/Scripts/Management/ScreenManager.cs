@@ -6,12 +6,10 @@ namespace Game
 {
     public class ScreenManager : MonoBehaviour
     {
-        internal List<GameScreen> screens = new List<GameScreen>();
+        public List<GameScreen> screens = new List<GameScreen>();
 
         public void Init()
         {
-            screens.AddRange(FindObjectsByType<GameScreen>(FindObjectsSortMode.None));
-
             //Show(firstScreen);
         }
 

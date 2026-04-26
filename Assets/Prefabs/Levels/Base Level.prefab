@@ -91,7 +91,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Game::Game.LevelScene
   levelData: {fileID: 11400000, guid: 29a1f530093074449ba37672113adbd5, type: 2}
   winTrigger: 202
-  loseTrigger: 304
+  loseTrigger: 0
   timerSeconds: 60
   remainingTime: 0
   gridCellPrefab: {fileID: 7026305415026314639, guid: 3dc5a9e2f6cb2984b93f395246195c79, type: 3}
