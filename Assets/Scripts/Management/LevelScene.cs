@@ -36,7 +36,7 @@ namespace Game
         public IEnumerator StartLevelTimer()
         {
             remainingTime = timerSeconds;
-            while (remainingTime > 0f)
+            while (remainingTime > 0f && !isEnded)
             {
                 yield return new WaitForSeconds(1f);
                 remainingTime -= 1;
