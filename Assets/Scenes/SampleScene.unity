@@ -350,7 +350,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Game::Game.CameraBoundController
   initDelay: 0
-  boundsOffset: {x: 1, y: 1, z: 0, w: 0}
+  boundsOffset: {x: 0.2, y: 0.2, z: 0, w: 0}
   plane: 1
 --- !u!114 &330585549
 MonoBehaviour:
@@ -491,7 +491,7 @@ Light:
     m_Type: 1
     m_Resolution: -1
     m_CustomResolution: -1
-    m_Strength: 1
+    m_Strength: 0.321
     m_Bias: 0.05
     m_NormalBias: 0.4
     m_NearPlane: 0.2

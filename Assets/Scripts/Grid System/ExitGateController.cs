@@ -8,6 +8,7 @@ namespace Game
         [Header("References")]
         [SerializeField] private Transform animatedPart;
         [SerializeField] private Renderer gateRenderer;
+        [SerializeField] private Renderer arrowRenderer;
 
         [Header("Visual")]
         [SerializeField] private Color defaultGateColor = new Color(0.45f, 0.45f, 0.45f, 1f);
@@ -33,6 +34,7 @@ namespace Game
             if (gateRenderer != null)
             {
                 gateRenderer.material.color = elementData != null ? elementData.color : defaultGateColor;
+                arrowRenderer.enabled = elementData != null;
             }
         }
 
