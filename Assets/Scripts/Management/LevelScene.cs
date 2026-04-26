@@ -185,25 +185,11 @@ namespace Game
         public void Win()
         {
             isWin = true;
-            DisableAllElementInputs();
         }
 
         public void Lose()
         {
             isLose = true;
-            DisableAllElementInputs();
-        }
-
-        private void DisableAllElementInputs()
-        {
-            GridElement[] allElements = FindObjectsByType<GridElement>(FindObjectsSortMode.None);
-            foreach (GridElement element in allElements)
-            {
-                if (element != null)
-                {
-                    element.enableInput = false;
-                }
-            }
         }
     }
 }

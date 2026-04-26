@@ -16,6 +16,11 @@ namespace Game
         public CellData[,] gridLayout;
 
 #if UNITY_EDITOR
+        [Tooltip("Element data pool used for assigning elements in the level editor. Right-click on cells to assign elements.")]
+        public List<ElementData> editorElementPool = new List<ElementData>();
+#endif
+
+#if UNITY_EDITOR
         [Button]
         public void InitializeArray()
         {
@@ -189,28 +194,34 @@ namespace Game
                 }
 
                 // Element Assignment
-                List<ElementData> elementPool = GameManager.Instance.elementData;
                 if (Event.current.type == EventType.MouseDown && Event.current.button == 1)
                 {
                     if (isExitCell || value.cellType == CellType.Empty)
                     {
-                        if (elementPool.Count > 0)
+                        if (editorElementPool != null && editorElementPool.Count > 0)
                         {
                             // Create a dropdown menu
                             GenericMenu genericMenu = new GenericMenu();
-                            if (elementPool != null)
+                            for (int i = 0; i < editorElementPool.Count; i++)
                             {
-                                for (int i = 0; i < elementPool.Count; i++)
+                                int index = i; // Capture the current index for the lambda
+                                ElementData elementData = editorElementPool[i];
+                                if (elementData != null)
                                 {
-                                    int index = i; // Capture the current index for the lambda
-                                    genericMenu.AddItem(new GUIContent(elementPool[i].Name), false, () =>
+                                    genericMenu.AddItem(new GUIContent(elementData.Name), false, () =>
                                     {
-                                        value.currentElement = elementPool[index];
+                                        value.currentElement = elementData;
+                                        MarkDirty();
                                     });
                                 }
                             }
                             genericMenu.ShowAsContext();
-                            MarkDirty();
+                        }
+                        else
+                        {
+                            EditorUtility.DisplayDialog("No Elements Available", 
+                                "Please assign ElementData assets to the 'Editor Element Pool' field in this LevelData asset.", 
+                                "OK");
                         }
                     }
                     Event.current.Use();
